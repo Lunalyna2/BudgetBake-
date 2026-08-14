@@ -1,5 +1,5 @@
-import CostCalculatorPage from "../pages/costCalculator";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <CostCalculatorPage />;
+  redirect("/login");
 }
