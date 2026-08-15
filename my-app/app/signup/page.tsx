@@ -11,20 +11,28 @@ export default function SignUpPage() {
     password: "",
     confirmPassword: "",
   });
+  const [showInvalidInput, setShowInvalidInput] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setShowInvalidInput(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
+    const hasEmptyField = Object.values(formData).some((value) => !value.trim());
+
+    if (hasEmptyField || formData.password !== formData.confirmPassword) {
+      setShowInvalidInput(true);
       return;
     }
 
     console.log("Sign‑Up Data:", formData);
     router.push("/cost_calculator");
   };
+
+  const isInvalid = showInvalidInput;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-900">
@@ -35,6 +43,10 @@ export default function SignUpPage() {
         <h1 className="text-3xl font-bold mb-6 text-center text-purple-600">
           SIGN UP
         </h1>
+
+        {showInvalidInput && (
+          <p className="mb-4 text-center text-sm font-medium text-red-500">Invalid input</p>
+        )}
 
         {[
           { name: "fullName", label: "Full Name", type: "text", placeholder: "Name" },
@@ -57,7 +69,9 @@ export default function SignUpPage() {
               placeholder={field.placeholder}
               value={(formData as Record<string, string>)[field.name]}
               onChange={handleChange}
-              className="w-full p-2 border-2 rounded-md border-transparent focus:outline-none focus:border-pink-500 bg-gray-50 text-black"
+              className={`w-full p-2 border-2 rounded-md bg-gray-50 text-black focus:outline-none ${
+                isInvalid ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
+              }`}
             />
           </div>
         ))}
@@ -71,7 +85,7 @@ export default function SignUpPage() {
 
         <p className="text-center text-gray-600 mt-4">
           Already have an account?{" "}
-          <a href="/login" className="text-purple-600 underline">
+          <a href="/login" className="text-pink-600 underline">
             Log in
           </a>
         </p>

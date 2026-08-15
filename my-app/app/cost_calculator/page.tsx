@@ -163,7 +163,7 @@ export default function CostCalculatorPage() {
                         <td>${formatCurrency(ingredient.unitCost)}</td>
                         <td>${formatCurrency(ingredient.quantity * ingredient.unitCost)}</td>
                     </tr>`,
-                )
+            )
             .join("");
 
         receiptWindow.document.write(`
@@ -353,16 +353,16 @@ export default function CostCalculatorPage() {
                                 </label>
                                 <label className="grid gap-2 text-sm font-medium text-slate-600">
                                     Batch Size
-                                        <div className="flex h-11 items-stretch overflow-hidden rounded-xl border border-pink-100 bg-rose-50/40">
+                                    <div className="flex h-11 items-stretch overflow-hidden rounded-xl border border-pink-100 bg-rose-50/40">
                                         <input
                                             type="number"
                                             min={1}
-                                                value={batchSizeDraft}
-                                                onChange={(event) => {
-                                                    setBatchSizeDraft(Math.max(1, Number(event.target.value) || 1));
-                                                    setBatchScaled(false);
-                                                    setSummaryGenerated(false);
-                                                }}
+                                            value={batchSizeDraft}
+                                            onChange={(event) => {
+                                                setBatchSizeDraft(Math.max(1, Number(event.target.value) || 1));
+                                                setBatchScaled(false);
+                                                setSummaryGenerated(false);
+                                            }}
                                             className="w-full min-w-0 bg-transparent px-3 outline-none"
                                         />
                                     </div>
@@ -370,7 +370,7 @@ export default function CostCalculatorPage() {
                                 <button
                                     type="button"
                                     onClick={scaleBatch}
-                                        className="mt-6 h-11 rounded-xl bg-linear-to-r from-pink-500 to-rose-400 px-4 text-sm font-semibold text-white shadow-md shadow-pink-200 transition hover:brightness-105"
+                                    className="mt-6 h-11 rounded-xl bg-linear-to-r from-pink-500 to-rose-400 px-4 text-sm font-semibold text-white shadow-md shadow-pink-200 transition hover:brightness-105"
                                 >
                                     Scale Batch
                                 </button>
@@ -391,9 +391,9 @@ export default function CostCalculatorPage() {
                                             min={0}
                                             value={markup}
                                             onChange={(event) => {
-                                            setMarkup(Math.max(0, Number(event.target.value) || 0));
-                                            setSummaryGenerated(false);
-                                        }}
+                                                setMarkup(Math.max(0, Number(event.target.value) || 0));
+                                                setSummaryGenerated(false);
+                                            }}
                                             className="w-full bg-transparent outline-none"
                                         />
                                         <span className="text-pink-300">%</span>
@@ -527,12 +527,12 @@ export default function CostCalculatorPage() {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => {
-                                                                if (editingIngredientId === ingredient.id) {
-                                                                    finishIngredientEdit(ingredient.id);
-                                                                } else {
-                                                                    focusIngredientName(ingredient.id);
-                                                                }
-                                                            }}
+                                                                    if (editingIngredientId === ingredient.id) {
+                                                                        finishIngredientEdit(ingredient.id);
+                                                                    } else {
+                                                                        focusIngredientName(ingredient.id);
+                                                                    }
+                                                                }}
                                                                 className="block w-full px-3 py-2 text-left text-sm text-slate-600 transition hover:bg-rose-50"
                                                             >
                                                                 {editingIngredientId === ingredient.id ? "Done" : "Edit"}
@@ -554,7 +554,6 @@ export default function CostCalculatorPage() {
                             </div>
                         </div>
                     </section>
-
                 </section>
 
                 <aside className="flex h-full min-h-0 flex-col gap-3 overflow-hidden rounded-[28px] border border-pink-100/70 bg-white/90 p-3 shadow-[0_24px_80px_rgba(244,114,182,0.14)] backdrop-blur lg:self-start lg:sticky lg:top-3">
@@ -566,7 +565,7 @@ export default function CostCalculatorPage() {
                         <div className="rounded-2xl bg-rose-50/80 p-3">
                             <h3 className="text-base font-semibold text-slate-700">{recipeName || "Untitled Recipe"}</h3>
                             <p className="mt-1.5 text-sm text-slate-500">
-                                        Batch Size: <span className="font-semibold text-pink-500">{batchScaled ? `${appliedBatchSize ?? batchSizeDraft} Cookies` : "Press Scale Batch"}</span>
+                                Batch Size: <span className="font-semibold text-pink-500">{batchScaled ? `${appliedBatchSize ?? batchSizeDraft} Cookies` : "Press Scale Batch"}</span>
                             </p>
                         </div>
 
