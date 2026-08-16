@@ -143,15 +143,7 @@ export default function RecipeLibrary() {
               RECIPE LIBRARY
             </h1>
           </div>
-          <button
-            type="button"
-            className="text-[#E94E77] hover:text-[#800040] transition-colors"
-            aria-label="Clear recipes"
-          >
-            <Trash2 className="h-5 w-5" />
-          </button>
         </div>
-
         <div className="grid gap-6 md:grid-cols-2">
           <GreetingsCard onAddRecipe={openNewRecipeModal} />
           <RemindersCard
