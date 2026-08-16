@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { calculateItemCost, calculateTotalBatchCost, Ingredient } from '@/utils/costing';
-
+import { scaleIngredient, getIngredientCost, calculateTotalCost, Ingredient } from '@/utils/costing';
 interface Recipe {
   id: string;
   name: string;
@@ -12,11 +11,9 @@ interface Recipe {
 export default function RecipeCalculator({ recipeId }: { recipeId: string }) {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  
-  // Requirement: Default batch size factor to 1
+
   const [batchSize, setBatchSize] = useState<number>(1);
 
-  // Requirement: Fetch data from /api/recipes/[id]
   useEffect(() => {
     async function fetchRecipe() {
       try {
@@ -37,15 +34,15 @@ export default function RecipeCalculator({ recipeId }: { recipeId: string }) {
   if (loading) return <p>Loading calculator...</p>;
   if (!recipe) return <p>No recipe found.</p>;
 
-  // Requirement: Compute values on-the-fly inside the render loop 
-  // without modifying the fetched recipe.ingredients state array.
-  const computedIngredients = recipe.ingredients.map((item) => ({
-    ...item,
-    scaledQuantity: item.quantity * batchSize,
-    totalCost: calculateItemCost(item, batchSize),
-  }));
+ const computedIngredients = recipe.ingredients.map((item) => {
+  const scaled = scaleIngredient(item, batchSize);
+  return {
+    ...scaled,
+    totalCost: getIngredientCost(scaled),
+  };
+});
 
-  const totalCost = calculateTotalBatchCost(recipe.ingredients, batchSize);
+const totalCost = calculateTotalCost(recipe.ingredients, batchSize);
 
   return (
     <div className="p-4 border rounded-lg max-w-md">
@@ -64,12 +61,12 @@ export default function RecipeCalculator({ recipeId }: { recipeId: string }) {
 
       <div className="space-y-2">
         <h3 className="font-semibold text-sm text-gray-600">Calculated Ingredients</h3>
-        {computedIngredients.map((item) => (
-          <div key={item.id} className="flex justify-between text-sm">
-            <span>{item.name} ({item.scaledQuantity} {item.unit})</span>
+        {computedIngredients.map((item, index) => (
+          <div key={item.name ?? index} className="flex justify-between text-sm">
+            <span>{item.name} ({item.quantity} {item.unit})</span>
             <span>${item.totalCost.toFixed(2)}</span>
-          </div>
-        ))}
+            </div>
+          ))}
         <hr className="my-2" />
         <div className="flex justify-between font-bold">
           <span>Total:</span>
