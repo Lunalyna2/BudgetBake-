@@ -1,5 +1,5 @@
-import RecipeLibrary from "./RecipeLibrary";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <RecipeLibrary />;
+  redirect("/login");
 }
