@@ -76,3 +76,4 @@ export const calculateTotalCost = (ingredients: Ingredient[], factor: number): n
   ingredients
     .map((ingredient) => scaleIngredient(ingredient, factor))
     .reduce((total, ingredient) => total + getIngredientCost(ingredient), 0);
+    
