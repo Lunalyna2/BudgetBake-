@@ -27,17 +27,6 @@ export default function GreetingsCard({ onAddRecipe }: GreetingsCardProps) {
           ADD NEW RECIPE
         </button>
       </div>
-
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 w-36 h-36 pointer-events-none">
-        <img
-          src="https://cdni.iconscout.com/illustration/premium/thumb/cupcake-illustration-download-in-svg-png-gif-file-formats--muffin-cake-dessert-[#5A0D36]-bakery-food-pack-illustrations-4549320.png"
-          alt="Cupcake"
-          className="w-full h-full object-contain opacity-90"
-          onError={(event) => {
-            event.currentTarget.style.display = "none";
-          }}
-        />
-      </div>
     </div>
   );
 }

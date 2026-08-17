@@ -3,14 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 
-import Header from "./components/Header";
-import GreetingsCard from "./components/GreetingsCard";
-import RecipeCarousel from "./components/RecipeCarousel";
-import RemindersCard from "./components/RemindersCard";
-import RecipeModal from "./components/modals/RecipeModal";
-import RemindersModal from "./components/modals/RemindersModal";
-import { blankRecipeForm, initialRecipes, initialReminders } from "./data/initialData";
-import type { Recipe, Reminder, RecipeFormState } from "./types/recipe";
+import GreetingsCard from "./GreetingsCard";
+import RecipeCarousel from "./RecipeCarousel";
+import RemindersCard from "./RemindersCard";
+import RecipeModal from "./modals/RecipeModal";
+import RemindersModal from "./modals/RemindersModal";
+import { blankRecipeForm, initialRecipes, initialReminders } from "../data/initialData";
+import type { Recipe, Reminder, RecipeFormState } from "../types/recipe";
 
 export default function RecipeLibrary() {
   const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
@@ -133,8 +132,6 @@ export default function RecipeLibrary() {
 
   return (
     <div className="min-h-screen bg-white text-zinc-800 antialiased">
-      <Header />
-
       <main className="mx-auto max-w-7xl px-8 py-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
