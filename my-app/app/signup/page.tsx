@@ -1,7 +1,9 @@
 "use client";
 
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -13,10 +15,47 @@ export default function SignUpPage() {
     setShowInvalidInput(false);
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
+    if (
+      !formData.name.trim() ||
+      !formData.email.trim() ||
+      !formData.password.trim()
+    ) {
+      setShowInvalidInput(true);
+      return;
+    }
+
+    setShowInvalidInput(false);
+
+    const { data, error } = await supabase.auth.signUp({
+      email: formData.email.trim(),
+      password: formData.password,
+    });
+
+    if (error) {
+      console.error("Signup error:", error);
+      setShowInvalidInput(true);
+      return;
+    }
+
+    if (!data.user) {
+      console.error("Signup succeeded but no user was returned.");
+      setShowInvalidInput(true);
+      return;
+    }
+
+    const { error: profileError } = await supabase
+      .from("users")
+      .insert({
+        user_id: data.user.id,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+      });
+
+    if (profileError) {
+      console.error("Profile creation error:", profileError);
       setShowInvalidInput(true);
       return;
     }
@@ -45,9 +84,8 @@ export default function SignUpPage() {
             value={formData.name}
             onChange={handleChange}
             placeholder="John Doe"
-            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${
-              showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
-            }`}
+            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
+              }`}
           />
         </div>
 
@@ -61,9 +99,8 @@ export default function SignUpPage() {
             value={formData.email}
             onChange={handleChange}
             placeholder="johndoe@gmail.com"
-            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${
-              showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
-            }`}
+            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
+              }`}
           />
         </div>
 
@@ -77,9 +114,8 @@ export default function SignUpPage() {
             value={formData.password}
             onChange={handleChange}
             placeholder="Password"
-            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${
-              showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
-            }`}
+            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
+              }`}
           />
         </div>
 

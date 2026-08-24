@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -13,10 +14,23 @@ export default function LoginPage() {
     setShowInvalidInput(false);
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     if (!formData.email.trim() || !formData.password.trim()) {
+      setShowInvalidInput(true);
+      return;
+    }
+
+    setShowInvalidInput(false);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: formData.email.trim(),
+      password: formData.password,
+    });
+
+    if (error) {
+      console.error("Login error:", error);
       setShowInvalidInput(true);
       return;
     }
@@ -46,9 +60,8 @@ export default function LoginPage() {
             value={formData.email}
             onChange={handleChange}
             placeholder="johndoe@gmail.com"
-            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${
-              showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
-            }`}
+            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
+              }`}
           />
         </div>
 
@@ -62,9 +75,8 @@ export default function LoginPage() {
             value={formData.password}
             onChange={handleChange}
             placeholder="Password"
-            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${
-              showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
-            }`}
+            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
+              }`}
           />
         </div>
 

@@ -1,50 +1,126 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+
+export async function GET() {
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized.",
+        },
+        { status: 401 }
+      );
+    }
+
+    const { data: recipes, error } = await supabase
+      .from("recipes")
+      .select(`
+        recipe_id,
+        user_id,
+        name,
+        description,
+        base_servings,
+        cost,
+        image_url,
+        created_at
+      `)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Failed to fetch recipes.",
+          error: error.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      recipes,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Failed to fetch recipes.",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createSupabaseServerClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     const {
-      user_id,
       name,
       description,
       base_servings,
-      ingredients,
+      cost,
+      image_url,
     } = body;
 
-    // Validate required recipe fields
-    if (!user_id || !name || !base_servings) {
+    if (!name) {
       return NextResponse.json(
         {
           success: false,
-          message: "Missing required recipe fields.",
+          message: "Recipe name is required.",
         },
         { status: 400 }
       );
     }
 
-    // Validate ingredients array
-    if (!Array.isArray(ingredients) || ingredients.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Ingredients must be a non-empty array.",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Insert the recipe
     const { data: recipe, error: recipeError } = await supabase
       .from("recipes")
       .insert({
-        user_id,
+        user_id: user.id,
         name,
         description: description ?? null,
-        base_servings,
+        base_servings: base_servings ?? 1,
+        cost: cost ?? 0,
+        image_url: image_url ?? null,
       })
-      .select("recipe_id")
+      .select(`
+        recipe_id,
+        user_id,
+        name,
+        description,
+        base_servings,
+        cost,
+        image_url,
+        created_at
+      `)
       .single();
 
     if (recipeError) {
@@ -58,39 +134,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Convert the ingredients array into recipe_ingredients rows
-    const recipeIngredients = ingredients.map(
-      (ingredient: {
-        ingredient_id: string;
-        quantity: number;
-      }) => ({
-        recipe_id: recipe.recipe_id,
-        ingredient_id: ingredient.ingredient_id,
-        quantity: ingredient.quantity,
-      })
-    );
-
-    // Insert the recipe's ingredients
-    const { error: ingredientError } = await supabase
-      .from("recipe_ingredients")
-      .insert(recipeIngredients);
-
-    if (ingredientError) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Recipe was created, but its ingredients could not be added.",
-          error: ingredientError.message,
-        },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json(
       {
         success: true,
         message: "Recipe created successfully.",
-        recipe_id: recipe.recipe_id,
+        recipe,
       },
       { status: 201 }
     );
