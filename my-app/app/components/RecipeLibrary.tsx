@@ -149,9 +149,9 @@ export default function RecipeLibrary() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-zinc-800 antialiased">
-      <main className="mx-auto max-w-7xl px-8 py-8">
-        <div className="flex items-center justify-between mb-6">
+    <div className="bg-white text-zinc-800 antialiased">
+      <main className="mx-auto max-w-7xl px-10 py-6">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span className="h-5 w-1.5 bg-[#800040] rounded-full" />
             <h1 className="text-lg font-bold uppercase tracking-wider text-[#800040]">
@@ -170,7 +170,7 @@ export default function RecipeLibrary() {
             <Trash2 className="h-5 w-5" />
           </button>
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
           <GreetingsCard onAddRecipe={openNewRecipeModal} />
           <RemindersCard
             reminders={reminders}

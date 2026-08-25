@@ -13,7 +13,7 @@ export default function RecipeCard({ recipe, onEdit, isDeleteMode, onDelete }: R
   return (
     <div
       onClick={() => !isDeleteMode && onEdit(recipe)}
-      className="group relative w-[210px] shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md"
+      className="group relative w-[260px] shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md"
     >
       {isDeleteMode && (
         <button
@@ -27,7 +27,7 @@ export default function RecipeCard({ recipe, onEdit, isDeleteMode, onDelete }: R
           <X className="h-4 w-4" />
         </button>
       )}
-      <div className="h-44 w-full overflow-hidden bg-gray-100">
+      <div className="h-56 w-full overflow-hidden bg-gray-100">
         {recipe.imageUrl ? (
           <img
             src={recipe.imageUrl}
@@ -41,11 +41,11 @@ export default function RecipeCard({ recipe, onEdit, isDeleteMode, onDelete }: R
         )}
       </div>
 
-      <div className="p-4">
-        <h3 className="text-base font-bold text-[#5A0D36] truncate">
+      <div className="p-5">
+        <h3 className="text-lg font-bold text-[#5A0D36] truncate">
           {recipe.title}
         </h3>
-        <p className="mt-0.5 text-xs font-semibold text-amber-900/60">
+        <p className="mt-1 text-sm font-semibold text-amber-900/60">
           Cost: ₱{recipe.cost} / recipe
         </p>
       </div>
