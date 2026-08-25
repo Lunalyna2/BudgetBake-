@@ -8,6 +8,7 @@ import RecipeCarousel from "./RecipeCarousel";
 import RemindersCard from "./RemindersCard";
 import RecipeModal from "./modals/RecipeModal";
 import RemindersModal from "./modals/RemindersModal";
+import DeleteConfirmationModal from "./modals/DeleteConfirmationModal";
 import { blankRecipeForm, initialRecipes, initialReminders } from "../data/initialData";
 import type { Recipe, Reminder, RecipeFormState } from "../types/recipe";
 
@@ -21,6 +22,8 @@ export default function RecipeLibrary() {
   const [newReminderText, setNewReminderText] = useState("");
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -130,6 +133,21 @@ export default function RecipeLibrary() {
     });
   };
 
+  const handleDeleteRecipe = (recipe: Recipe) => {
+    setRecipeToDelete(recipe);
+  };
+
+  const confirmDeleteRecipe = () => {
+    if (!recipeToDelete) return;
+    setRecipes((current) => current.filter((recipe) => recipe.id !== recipeToDelete.id));
+    setRecipeToDelete(null);
+    setIsDeleteMode(false);
+  };
+
+  const cancelDeleteRecipe = () => {
+    setRecipeToDelete(null);
+  };
+
   return (
     <div className="min-h-screen bg-white text-zinc-800 antialiased">
       <main className="mx-auto max-w-7xl px-8 py-8">
@@ -140,6 +158,17 @@ export default function RecipeLibrary() {
               RECIPE LIBRARY
             </h1>
           </div>
+          <button
+            type="button"
+            onClick={() => setIsDeleteMode((prev) => !prev)}
+            className={`rounded-full p-2 transition-colors ${
+              isDeleteMode
+                ? "bg-[#800040] text-white"
+                : "text-[#800040] hover:bg-[#800040]/10"
+            }`}
+          >
+            <Trash2 className="h-5 w-5" />
+          </button>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           <GreetingsCard onAddRecipe={openNewRecipeModal} />
@@ -157,6 +186,8 @@ export default function RecipeLibrary() {
           onEditRecipe={openEditRecipeModal}
           onScroll={scrollCarousel}
           carouselRef={carouselRef}
+          isDeleteMode={isDeleteMode}
+          onDeleteRecipe={handleDeleteRecipe}
         />
       </main>
 
@@ -179,6 +210,13 @@ export default function RecipeLibrary() {
         onDeleteReminder={handleDeleteReminder}
         onNewReminderTextChange={setNewReminderText}
         onAddReminder={handleAddReminder}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={recipeToDelete !== null}
+        recipeTitle={recipeToDelete?.title ?? ""}
+        onClose={cancelDeleteRecipe}
+        onConfirm={confirmDeleteRecipe}
       />
     </div>
   );

@@ -1,16 +1,32 @@
+import { X } from "lucide-react";
+
 import type { Recipe } from "../types/recipe";
 
 type RecipeCardProps = {
   recipe: Recipe;
   onEdit: (recipe: Recipe) => void;
+  isDeleteMode?: boolean;
+  onDelete?: (recipe: Recipe) => void;
 };
 
-export default function RecipeCard({ recipe, onEdit }: RecipeCardProps) {
+export default function RecipeCard({ recipe, onEdit, isDeleteMode, onDelete }: RecipeCardProps) {
   return (
     <div
-      onClick={() => onEdit(recipe)}
-      className="group w-[210px] shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md"
+      onClick={() => !isDeleteMode && onEdit(recipe)}
+      className="group relative w-[210px] shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md"
     >
+      {isDeleteMode && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete?.(recipe);
+          }}
+          className="absolute right-2 top-2 z-10 rounded-full bg-white/90 p-1 text-gray-500 shadow-sm hover:bg-red-50 hover:text-red-500"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
       <div className="h-44 w-full overflow-hidden bg-gray-100">
         {recipe.imageUrl ? (
           <img
