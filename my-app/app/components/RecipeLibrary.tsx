@@ -13,7 +13,7 @@ import { blankRecipeForm, initialRecipes, initialReminders } from "../data/initi
 import type { Recipe, Reminder, RecipeFormState } from "../types/recipe";
 
 export default function RecipeLibrary() {
-  const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>(initialReminders);
   const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -25,6 +25,46 @@ export default function RecipeLibrary() {
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        const response = await fetch("/api/recipes");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch recipes.");
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.message || "Failed to fetch recipes.");
+        }
+
+        const formattedRecipes: Recipe[] = data.recipes.map(
+          (recipe: {
+            recipe_id: string;
+            name: string;
+            description: string | null;
+            cost: number;
+            image_url: string | null;
+          }) => ({
+            id: recipe.recipe_id,
+            title: recipe.name,
+            cost: Number(recipe.cost) || 0,
+            notes: recipe.description ?? "",
+            imageUrl: recipe.image_url ?? "",
+          })
+        );
+
+        setRecipes(formattedRecipes);
+      } catch (error) {
+        console.error("Error fetching recipes:", error);
+      }
+    };
+
+    fetchRecipes();
+  }, []);
 
   useEffect(() => {
     const updateCarouselButtons = () => {
@@ -68,25 +108,79 @@ export default function RecipeLibrary() {
     setRecipeForm((current) => ({ ...current, [field]: value }));
   };
 
-  const handleSaveRecipe = () => {
-    const sanitizedCost = Number(recipeForm.cost.replace(/[^0-9.]/g, "")) || 0;
-    const normalizedRecipe: Recipe = {
-      id: selectedRecipe?.id ?? `recipe-${Date.now()}`,
-      title: recipeForm.title || "Untitled Recipe",
+  const handleSaveRecipe = async () => {
+    const sanitizedCost =
+      Number(recipeForm.cost.replace(/[^0-9.]/g, "")) || 0;
+
+    const recipeData = {
+      name: recipeForm.title || "Untitled Recipe",
+      description: recipeForm.notes,
       cost: sanitizedCost,
-      notes: recipeForm.notes,
-      imageUrl: recipeForm.imageUrl || "",
+      image_url: recipeForm.imageUrl || null,
+      base_servings: 1,
     };
 
-    setRecipes((current) => {
+    try {
       if (selectedRecipe) {
-        return current.map((recipe) =>
-          recipe.id === selectedRecipe.id ? normalizedRecipe : recipe
+        const response = await fetch(`/api/recipes/${selectedRecipe.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(recipeData),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "Failed to update recipe.");
+        }
+
+        const updatedRecipe: Recipe = {
+          id: data.recipe.recipe_id,
+          title: data.recipe.name,
+          cost: Number(data.recipe.cost) || 0,
+          notes: data.recipe.description ?? "",
+          imageUrl: data.recipe.image_url ?? "",
+        };
+
+        setRecipes((current) =>
+          current.map((recipe) =>
+            recipe.id === updatedRecipe.id ? updatedRecipe : recipe
+          )
         );
+
+        setIsRecipeModalOpen(false);
+        return;
       }
-      return [normalizedRecipe, ...current];
-    });
-    setIsRecipeModalOpen(false);
+
+      const response = await fetch("/api/recipes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(recipeData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to save recipe.");
+      }
+
+      const savedRecipe: Recipe = {
+        id: data.recipe.recipe_id,
+        title: data.recipe.name,
+        cost: Number(data.recipe.cost) || 0,
+        notes: data.recipe.description ?? "",
+        imageUrl: data.recipe.image_url ?? "",
+      };
+
+      setRecipes((current) => [savedRecipe, ...current]);
+      setIsRecipeModalOpen(false);
+    } catch (error) {
+      console.error("Error saving recipe:", error);
+    }
   };
 
   const handleUploadImage = (event: React.ChangeEvent<HTMLInputElement>) => {
