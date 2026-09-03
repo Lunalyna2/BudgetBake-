@@ -56,3 +56,41 @@ body {
 .animate-fade-in-up {
   animation: fade-in-up 0.45s ease-out both;
 }
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.35s ease-out both;
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.22s ease-out both;
+}
+
+@keyframes progress-grow {
+  from {
+    width: 0;
+  }
+}
+
+.animate-progress-grow {
+  animation: progress-grow 0.7s ease-out both;
+}

@@ -10,11 +10,13 @@ import {
   Star,
   Trash2,
   Users,
+  X,
 } from "lucide-react";
 
-import OrderListCard from "../components/OrderListCard";
+import OrderListTable from "../components/OrderListCard";
 import AddOrderListModal from "../components/modals/AddOrderListModal";
 import ConfirmDeleteModal from "../components/modals/ConfirmDeleteModal";
+import ConfirmDeleteCustomerModal from "../components/modals/ConfirmDeleteCustomerModal";
 import ViewOrderListModal from "../components/modals/ViewOrderListModal";
 import type { CustomerOrder, OrderCategory } from "../types/order";
 
@@ -24,10 +26,16 @@ export default function OrderListPage() {
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isPriorityMode, setIsPriorityMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryToDelete, setCategoryToDelete] =
-    useState<OrderCategory | null>(null);
-  const [categoryToView, setCategoryToView] =
-    useState<OrderCategory | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<OrderCategory | null>(null);
+  const [categoryToViewId, setCategoryToViewId] = useState<string | null>(null);
+  const [customerToDelete, setCustomerToDelete] = useState<{
+    categoryId: string;
+    customerId: string;
+    customerName: string;
+  } | null>(null);
+
+  const categoryToView =
+    categories.find((category) => category.id === categoryToViewId) ?? null;
 
   useEffect(() => {
     const loadOrderLists = async () => {
@@ -105,6 +113,16 @@ export default function OrderListPage() {
     }
 
     setCategoryToDelete(null);
+  };
+
+  const handleConfirmDeleteCustomer = () => {
+    if (customerToDelete) {
+      removeCustomerFromCategory(
+        customerToDelete.categoryId,
+        customerToDelete.customerId
+      );
+    }
+    setCustomerToDelete(null);
   };
 
   const saveOrderListChanges = async (
@@ -597,10 +615,11 @@ export default function OrderListPage() {
       ).length,
     0
   );
+  const totalPending = Math.max(0, totalCustomers - totalCompleted);
 
   const stats = [
     {
-      label: "Lists",
+      label: "Order Lists",
       value: totalLists,
       icon: ClipboardList,
     },
@@ -613,6 +632,11 @@ export default function OrderListPage() {
       label: "Completed",
       value: totalCompleted,
       icon: CheckCircle2,
+    },
+    {
+      label: "Pending",
+      value: totalPending,
+      icon: Star,
     },
   ];
 
@@ -634,119 +658,88 @@ export default function OrderListPage() {
           )
       );
 
+  const isSearching = normalizedQuery.length > 0;
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#FFF5FB] via-[#FFF9FC] to-[#FDF0F7] px-4 py-8 text-[#5A0D36]">
-      {/* decorative blobs */}
-      <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#F7A9CF]/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 top-1/2 h-80 w-80 rounded-full bg-[#B185DB]/20 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-[#FFC3D0]/25 blur-3xl" />
+    <div className="min-h-screen bg-[#FDFCFB] px-4 py-8 text-[#5A0D36] sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-6xl">
+        {/*page header*/}
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D291BC]">
+              Weekly Orders
+            </p>
+            <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-[#5A0D36] sm:text-4xl">
+              Order List
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-500">
+              Keep track of every bake list and its customers. Search, prioritize,
+              and manage orders all in one place.
+            </p>
 
-      <div className="relative mx-auto max-w-[1760px]">
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-[#B185DB] via-[#D291BC] to-[#FFC3D0] text-white shadow-lg shadow-pink-200/70">
-              <ClipboardList className="h-8 w-8" />
-            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                aria-label={isPriorityMode ? "Done prioritizing" : "Toggle priority mode"}
+                onClick={() => setIsPriorityMode((prev) => !prev)}
+                className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+                  isPriorityMode
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "text-[#5A0D36] ring-1 ring-inset ring-zinc-200 hover:bg-amber-50"
+                }`}
+              >
+                <Star className={`h-4 w-4 ${isPriorityMode ? "fill-current" : ""}`} />
+                {isPriorityMode ? "Done prioritizing" : "Prioritize"}
+              </button>
 
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D291BC]">
-                Weekly Orders
-              </p>
-
-              <h1 className="mt-1 text-4xl font-black tracking-tight text-[#5A0D36]">
-                ORDER LIST
-              </h1>
-
-              <p className="mt-1 text-sm font-medium text-[#B185DB]">
-                Manage your weekly bakes with ease
-              </p>
+              <button
+                type="button"
+                aria-label={isDeleteMode ? "Done deleting" : "Toggle delete mode"}
+                onClick={() => setIsDeleteMode((prev) => !prev)}
+                className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+                  isDeleteMode
+                    ? "bg-red-600 text-white shadow-sm"
+                    : "text-[#5A0D36] ring-1 ring-inset ring-zinc-200 hover:bg-red-50"
+                }`}
+              >
+                <Trash2 className="h-4 w-4" />
+                {isDeleteMode ? (
+                  <>
+                    Done deleting
+                    <Check className="h-4 w-4" />
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              aria-label={
-                isPriorityMode
-                  ? "Done prioritizing"
-                  : "Toggle priority mode"
-              }
-              onClick={() =>
-                setIsPriorityMode((prev) => !prev)
-              }
-              className={`flex items-center gap-2 rounded-full border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition ${isPriorityMode
-                ? "border-[#C9A06B] bg-[#C9A06B] text-white shadow-md"
-                : "border-pink-100 bg-white text-[#5A0D36] shadow-sm hover:bg-pink-50"
-                }`}
-            >
-              <Star
-                className={`h-5 w-5 ${isPriorityMode ? "fill-current" : ""
-                  }`}
-              />
-
-              {isPriorityMode && (
-                <span className="hidden sm:inline">
-                  Done
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              aria-label={
-                isDeleteMode
-                  ? "Done deleting"
-                  : "Toggle delete mode"
-              }
-              onClick={() =>
-                setIsDeleteMode((prev) => !prev)
-              }
-              className={`flex items-center gap-2 rounded-full border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition ${isDeleteMode
-                ? "border-[#5A0D36] bg-[#5A0D36] text-white shadow-md"
-                : "border-pink-100 bg-white text-[#5A0D36] shadow-sm hover:bg-pink-50"
-                }`}
-            >
-              <Trash2 className="h-5 w-5" />
-
-              {isDeleteMode && (
-                <>
-                  <span className="hidden sm:inline">
-                    Done
-                  </span>
-
-                  <Check className="h-5 w-5" />
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
-              aria-label="Add new order list"
-              onClick={() => setIsModalOpen(true)}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-[#B185DB] via-[#D291BC] to-[#FFC3D0] text-white shadow-lg shadow-pink-200/80 ring-4 ring-white/60 transition hover:scale-[1.02]"
-            >
-              <Plus className="h-7 w-7" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#B185DB] via-[#D291BC] to-[#FFC3D0] px-5 py-3 text-sm font-bold text-white shadow-md shadow-pink-200/60 transition hover:opacity-95"
+          >
+            <Plus className="h-5 w-5" />
+            New Order List
+          </button>
         </div>
 
-        {/* stats strip */}
-        <div className="mb-8 flex flex-wrap gap-4">
+        {/*stats strip*/}
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="flex items-center gap-3 rounded-3xl border border-pink-100/80 bg-white/80 px-5 py-3 shadow-sm backdrop-blur"
+              className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-white px-4 py-3.5 shadow-sm"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF7FB] text-[#D291BC]">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#FFF7FB] text-[#D291BC]">
                 <stat.icon className="h-5 w-5" />
               </span>
-
-              <div>
-                <p className="text-xl font-black leading-none text-[#5A0D36]">
+              <div className="min-w-0">
+                <p className="text-2xl font-extrabold leading-none text-[#5A0D36]">
                   {stat.value}
                 </p>
-
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B185DB]">
+                <p className="mt-1 truncate text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                   {stat.label}
                 </p>
               </div>
@@ -754,97 +747,116 @@ export default function OrderListPage() {
           ))}
         </div>
 
-        {/* search bar */}
-        <div className="mb-8 flex items-center gap-4">
-          <div className="flex flex-1 items-center gap-3 rounded-full border border-pink-100/80 bg-white/90 px-5 py-3 shadow-sm backdrop-blur">
-            <Search className="h-5 w-5 shrink-0 text-[#D291BC]" />
+        {/*search + filters*/}
+        <div className="mt-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by order name or customer..."
+                className="w-full rounded-xl border border-zinc-200 bg-white py-3 pl-12 pr-12 text-sm font-medium text-[#5A0D36] placeholder:text-zinc-400 shadow-sm focus:border-[#D291BC] focus:outline-none focus:ring-2 focus:ring-pink-100"
+              />
+              {searchQuery.length > 0 && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-zinc-400 transition hover:bg-pink-50 hover:text-[#5A0D36]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
 
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(event) =>
-                setSearchQuery(event.target.value)
-              }
-              placeholder="Search by order name or customer..."
-              className="w-full bg-transparent text-sm font-semibold text-[#5A0D36] placeholder:text-zinc-400 focus:outline-none"
-            />
-
-            {searchQuery.length > 0 && (
-              <button
-                type="button"
-                aria-label="Clear search"
-                onClick={() => setSearchQuery("")}
-                className="shrink-0 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#D291BC] transition hover:bg-pink-50"
-              >
-                Clear
-              </button>
+            {isSearching && (
+              <div className="flex shrink-0 items-center gap-2 rounded-xl border border-pink-100 bg-white px-4 py-3 text-sm text-zinc-500 shadow-sm">
+                <span className="font-semibold text-[#5A0D36]">
+                  {filteredCategories.length}
+                </span>
+                of {categories.length} result
+                {filteredCategories.length === 1 ? "" : "s"}
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="ml-1 text-xs font-semibold text-[#D291BC] hover:underline"
+                >
+                  Clear
+                </button>
+              </div>
             )}
           </div>
-
-          {normalizedQuery.length > 0 && (
-            <span className="shrink-0 text-xs font-bold uppercase tracking-[0.18em] text-[#B185DB]">
-              {filteredCategories.length} of{" "}
-              {categories.length}
-            </span>
-          )}
         </div>
 
-        <div className="flex flex-wrap justify-start gap-6">
-          {filteredCategories.map(
-            (category, index) => (
-              <div
-                key={category.id}
-                className="animate-fade-in-up"
-                style={{
-                  animationDelay: `${index * 60}ms`,
-                }}
-              >
-                <OrderListCard
-                  category={category}
-                  isDeleteMode={isDeleteMode}
-                  isPriorityMode={isPriorityMode}
-                  onDelete={(id) =>
-                    setCategoryToDelete(
-                      categories.find(
-                        (category) =>
-                          category.id === id
-                      ) ?? null
-                    )
-                  }
-                  onView={(id) =>
-                    setCategoryToView(
-                      categories.find(
-                        (category) =>
-                          category.id === id
-                      ) ?? null
-                    )
-                  }
-                  onTogglePriority={togglePriority}
-                  onAddCustomer={
-                    addCustomerToCategory
-                  }
-                  onRemoveCustomer={
-                    removeCustomerFromCategory
-                  }
-                  onUpdateCustomer={
-                    updateCustomerInCategory
-                  }
-                  onToggleStatus={toggleOrderStatus}
-                  onUpdateQuantity={
-                    updateCustomerQuantity
-                  }
-                />
+        {/*table / list*/}
+        <div className="mt-6">
+          {categories.length === 0 ? (
+            <div className="animate-fade-in rounded-2xl border border-dashed border-zinc-200 bg-white px-6 py-16 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF7FB] text-[#D291BC]">
+                <ClipboardList className="h-7 w-7" />
               </div>
-            )
+              <h3 className="mt-4 text-lg font-bold text-[#5A0D36]">
+                No order lists yet
+              </h3>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
+                Create your first order list to start tracking customers and their
+                bakes for the week.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#B185DB] via-[#D291BC] to-[#FFC3D0] px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-pink-200/60 transition hover:opacity-95"
+              >
+                <Plus className="h-4 w-4" />
+                New Order List
+              </button>
+            </div>
+          ) : filteredCategories.length === 0 ? (
+            <div className="animate-fade-in rounded-2xl border border-dashed border-zinc-200 bg-white px-6 py-16 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF7FB] text-[#D291BC]">
+                <Search className="h-7 w-7" />
+              </div>
+              <h3 className="mt-4 text-lg font-bold text-[#5A0D36]">
+                No results for &ldquo;{searchQuery.trim()}&rdquo;
+              </h3>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">
+                Try a different order name or customer, or clear the search to see
+                all your order lists.
+              </p>
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-[#5A0D36] px-5 py-2.5 text-sm font-bold text-white transition hover:opacity-90"
+              >
+                Clear search
+              </button>
+            </div>
+          ) : (
+            <OrderListTable
+              categories={filteredCategories}
+              isDeleteMode={isDeleteMode}
+              isPriorityMode={isPriorityMode}
+              onDelete={(id) =>
+                setCategoryToDelete(
+                  categories.find((category) => category.id === id) ?? null
+                )
+              }
+              onView={(id) => setCategoryToViewId(id)}
+              onTogglePriority={togglePriority}
+            />
           )}
         </div>
       </div>
 
-      <AddOrderListModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleAddNewCategory}
-      />
+      {isModalOpen && (
+        <AddOrderListModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleAddNewCategory}
+        />
+      )}
 
       <ConfirmDeleteModal
         isOpen={categoryToDelete !== null}
@@ -858,7 +870,21 @@ export default function OrderListPage() {
       <ViewOrderListModal
         isOpen={categoryToView !== null}
         category={categoryToView}
-        onClose={() => setCategoryToView(null)}
+        onClose={() => setCategoryToViewId(null)}
+        onToggleStatus={toggleOrderStatus}
+        onUpdateQuantity={updateCustomerQuantity}
+        onUpdateCustomer={updateCustomerInCategory}
+        onAddCustomer={addCustomerToCategory}
+        onRequestDeleteCustomer={(categoryId, customerId, customerName) =>
+          setCustomerToDelete({ categoryId, customerId, customerName })
+        }
+      />
+
+      <ConfirmDeleteCustomerModal
+        isOpen={customerToDelete !== null}
+        customerName={customerToDelete?.customerName ?? ""}
+        onConfirm={handleConfirmDeleteCustomer}
+        onClose={() => setCustomerToDelete(null)}
       />
     </div>
   );
