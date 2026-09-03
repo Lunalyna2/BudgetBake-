@@ -47,14 +47,6 @@ export default function AddOrderListModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setOrderName("");
-      setDate(new Date().toISOString().slice(0, 10));
-      setCustomerRows([createCustomerRow()]);
-    }
-  }, [isOpen]);
-
   if (!isOpen) {
     return null;
   }
