@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Check,
   CheckCircle2,
@@ -16,179 +16,585 @@ import OrderListCard from "../components/OrderListCard";
 import AddOrderListModal from "../components/modals/AddOrderListModal";
 import ConfirmDeleteModal from "../components/modals/ConfirmDeleteModal";
 import ViewOrderListModal from "../components/modals/ViewOrderListModal";
-import { mockOrders } from "../data/mockOrders";
 import type { CustomerOrder, OrderCategory } from "../types/order";
 
 export default function OrderListPage() {
-  const [categories, setCategories] = useState<OrderCategory[]>(mockOrders);
+  const [categories, setCategories] = useState<OrderCategory[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isPriorityMode, setIsPriorityMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryToDelete, setCategoryToDelete] = useState<OrderCategory | null>(null);
-  const [categoryToView, setCategoryToView] = useState<OrderCategory | null>(null);
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<OrderCategory | null>(null);
+  const [categoryToView, setCategoryToView] =
+    useState<OrderCategory | null>(null);
 
-  const removeCategory = (categoryId: string) => {
-    setCategories((current) =>
-      current.filter((category) => category.id !== categoryId)
-    );
+  useEffect(() => {
+    const loadOrderLists = async () => {
+      try {
+        const response = await fetch("/api/order-lists");
+
+        if (!response.ok) {
+          throw new Error("Failed to load order lists");
+        }
+
+        const result = await response.json();
+
+        const mappedCategories: OrderCategory[] = (result.data ?? []).map(
+          (orderList: any) => ({
+            id: orderList.order_list_id,
+            orderName: orderList.order_name,
+            date: orderList.date,
+            priority: orderList.priority,
+            customers: (orderList.order_list_customers ?? []).map(
+              (customer: any) => ({
+                id: customer.order_customer_id,
+                customerName: customer.customer_name,
+                quantity: customer.quantity,
+                completed: customer.completed,
+              })
+            ),
+          })
+        );
+
+        setCategories(mappedCategories);
+      } catch (error) {
+        console.error("Failed to load order lists:", error);
+      }
+    };
+
+    loadOrderLists();
+  }, []);
+
+  const removeCategory = async (categoryId: string) => {
+    try {
+      const response = await fetch(
+        `/api/order-lists/${categoryId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => null);
+
+        throw new Error(
+          errorData?.error || "Failed to delete order list"
+        );
+      }
+
+      setCategories((current) =>
+        current.filter(
+          (category) => category.id !== categoryId
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Failed to delete order list:",
+        error
+      );
+    }
   };
+
 
   const handleConfirmDelete = () => {
     if (categoryToDelete) {
       removeCategory(categoryToDelete.id);
     }
+
     setCategoryToDelete(null);
   };
 
-  const addCustomerToCategory = (categoryId: string) => {
+  const saveOrderListChanges = async (
+    category: OrderCategory
+  ) => {
+    try {
+      const response = await fetch(
+        `/api/order-lists/${category.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customers: category.customers,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || "Failed to save order list"
+        );
+      }
+
+      const result = await response.json();
+
+      return result.data;
+    } catch (error) {
+      console.error(
+        "Failed to save order list changes:",
+        error
+      );
+
+      return null;
+    }
+  };
+
+  const addCustomerToCategory = async (
+    categoryId: string
+  ) => {
+    const category = categories.find(
+      (category) => category.id === categoryId
+    );
+
+    if (!category) {
+      return;
+    }
+
+    const updatedCategory: OrderCategory = {
+      ...category,
+      customers: [
+        ...category.customers,
+        {
+          id: `customer-${Date.now()}`,
+          customerName: "",
+          quantity: 1,
+          completed: false,
+        },
+      ],
+    };
+
     setCategories((current) =>
       current.map((category) =>
         category.id === categoryId
-          ? {
-              ...category,
-              customers: [
-                ...category.customers,
-                {
-                  id: `customer-${Date.now()}`,
-                  customerName: "",
-                  quantity: 1,
-                  completed: false,
-                },
-              ],
-            }
+          ? updatedCategory
           : category
       )
     );
-  };
 
-  const removeCustomerFromCategory = (categoryId: string, customerId: string) => {
-    setCategories((current) =>
-      current.map((category) => {
-        if (category.id !== categoryId) {
-          return category;
-        }
-
-        return {
-          ...category,
-          customers: category.customers.filter((customer) => customer.id !== customerId),
-        };
-      })
+    const saved = await saveOrderListChanges(
+      updatedCategory
     );
+
+    if (saved) {
+      setCategories((current) =>
+        current.map((category) =>
+          category.id === categoryId
+            ? {
+              ...category,
+              customers: (
+                saved.order_list_customers ?? []
+              ).map((customer: any) => ({
+                id: customer.order_customer_id,
+                customerName: customer.customer_name,
+                quantity: customer.quantity,
+                completed: customer.completed,
+              })),
+            }
+            : category
+        )
+      );
+    } else {
+      console.error("Failed to persist added customer");
+    }
   };
 
-  const updateCustomerInCategory = (
+  const removeCustomerFromCategory = async (
+    categoryId: string,
+    customerId: string
+  ) => {
+    const category = categories.find(
+      (category) => category.id === categoryId
+    );
+
+    if (!category) {
+      return;
+    }
+
+    const updatedCategory: OrderCategory = {
+      ...category,
+      customers: category.customers.filter(
+        (customer) => customer.id !== customerId
+      ),
+    };
+
+    setCategories((current) =>
+      current.map((category) =>
+        category.id === categoryId
+          ? updatedCategory
+          : category
+      )
+    );
+
+    const saved = await saveOrderListChanges(
+      updatedCategory
+    );
+
+    if (saved) {
+      setCategories((current) =>
+        current.map((category) =>
+          category.id === categoryId
+            ? {
+              ...category,
+              customers: (
+                saved.order_list_customers ?? []
+              ).map((customer: any) => ({
+                id: customer.order_customer_id,
+                customerName: customer.customer_name,
+                quantity: customer.quantity,
+                completed: customer.completed,
+              })),
+            }
+            : category
+        )
+      );
+    } else {
+      console.error(
+        "Failed to persist removed customer"
+      );
+    }
+  };
+
+  const updateCustomerInCategory = async (
     categoryId: string,
     customerId: string,
     updates: Partial<CustomerOrder>
   ) => {
-    setCategories((current) =>
-      current.map((category) => {
-        if (category.id !== categoryId) {
-          return category;
-        }
-
-        return {
-          ...category,
-          customers: category.customers.map((customer) =>
-            customer.id === customerId ? { ...customer, ...updates } : customer
-          ),
-        };
-      })
+    const category = categories.find(
+      (category) => category.id === categoryId
     );
+
+    if (!category) {
+      return;
+    }
+
+    const updatedCategory: OrderCategory = {
+      ...category,
+      customers: category.customers.map((customer) =>
+        customer.id === customerId
+          ? { ...customer, ...updates }
+          : customer
+      ),
+    };
+
+    setCategories((current) =>
+      current.map((category) =>
+        category.id === categoryId
+          ? updatedCategory
+          : category
+      )
+    );
+
+    const saved = await saveOrderListChanges(
+      updatedCategory
+    );
+
+    if (saved) {
+      setCategories((current) =>
+        current.map((category) =>
+          category.id === categoryId
+            ? {
+              ...category,
+              customers: (
+                saved.order_list_customers ?? []
+              ).map((customer: any) => ({
+                id: customer.order_customer_id,
+                customerName: customer.customer_name,
+                quantity: customer.quantity,
+                completed: customer.completed,
+              })),
+            }
+            : category
+        )
+      );
+    } else {
+      console.error(
+        "Failed to persist customer update"
+      );
+    }
   };
 
-  const toggleOrderStatus = (categoryId: string, customerId: string) => {
-    setCategories((current) =>
-      current.map((category) => {
-        if (category.id !== categoryId) {
-          return category;
-        }
-
-        return {
-          ...category,
-          customers: category.customers.map((customer) =>
-            customer.id === customerId
-              ? { ...customer, completed: !customer.completed }
-              : customer
-          ),
-        };
-      })
+  const toggleOrderStatus = async (
+    categoryId: string,
+    customerId: string
+  ) => {
+    const category = categories.find(
+      (category) => category.id === categoryId
     );
+
+    if (!category) {
+      return;
+    }
+
+    const updatedCategory: OrderCategory = {
+      ...category,
+      customers: category.customers.map((customer) =>
+        customer.id === customerId
+          ? {
+            ...customer,
+            completed: !customer.completed,
+          }
+          : customer
+      ),
+    };
+
+    setCategories((current) =>
+      current.map((category) =>
+        category.id === categoryId
+          ? updatedCategory
+          : category
+      )
+    );
+
+    const saved = await saveOrderListChanges(
+      updatedCategory
+    );
+
+    if (saved) {
+      setCategories((current) =>
+        current.map((category) =>
+          category.id === categoryId
+            ? {
+              ...category,
+              customers: (
+                saved.order_list_customers ?? []
+              ).map((customer: any) => ({
+                id: customer.order_customer_id,
+                customerName: customer.customer_name,
+                quantity: customer.quantity,
+                completed: customer.completed,
+              })),
+            }
+            : category
+        )
+      );
+    } else {
+      console.error(
+        "Failed to persist customer completion status"
+      );
+    }
   };
 
-  const updateCustomerQuantity = (
+  const updateCustomerQuantity = async (
     categoryId: string,
     customerId: string,
     change: number
   ) => {
-    setCategories((current) =>
-      current.map((category) => {
-        if (category.id !== categoryId) {
-          return category;
-        }
-
-        return {
-          ...category,
-          customers: category.customers.map((customer) =>
-            customer.id === customerId
-              ? { ...customer, quantity: Math.max(1, customer.quantity + change) }
-              : customer
-          ),
-        };
-      })
+    const category = categories.find(
+      (category) => category.id === categoryId
     );
-  };
 
-  const handleAddNewCategory = (payload: {
-    orderName: string;
-    date: string;
-    customers: Array<{ customerName: string; quantity: number }>;
-  }) => {
-    const nextCustomers = payload.customers
-      .filter((customer) => customer.customerName.trim().length > 0)
-      .map((customer, index) => ({
-        id: `new-customer-${Date.now()}-${index}`,
-        customerName: customer.customerName.trim(),
-        quantity: Math.max(1, Number(customer.quantity) || 1),
-        completed: false,
-      }));
+    if (!category) {
+      return;
+    }
 
-    const newCategory: OrderCategory = {
-      id: `category-${Date.now()}`,
-      orderName: payload.orderName || "New Order List",
-      date: payload.date || new Date().toISOString().slice(0, 10),
-      priority: false,
-      customers: nextCustomers.length > 0 ? nextCustomers : [{
-        id: `new-customer-${Date.now()}`,
-        customerName: "Guest",
-        quantity: 1,
-        completed: false,
-      }],
+    const updatedCategory: OrderCategory = {
+      ...category,
+      customers: category.customers.map((customer) =>
+        customer.id === customerId
+          ? {
+            ...customer,
+            quantity: Math.max(
+              1,
+              customer.quantity + change
+            ),
+          }
+          : customer
+      ),
     };
 
-    setCategories((current) => [newCategory, ...current]);
-    setIsModalOpen(false);
-  };
-
-  const togglePriority = (categoryId: string) => {
     setCategories((current) =>
       current.map((category) =>
         category.id === categoryId
-          ? { ...category, priority: !category.priority }
+          ? updatedCategory
           : category
       )
     );
+
+    const saved = await saveOrderListChanges(
+      updatedCategory
+    );
+
+    if (saved) {
+      setCategories((current) =>
+        current.map((category) =>
+          category.id === categoryId
+            ? {
+              ...category,
+              customers: (
+                saved.order_list_customers ?? []
+              ).map((customer: any) => ({
+                id: customer.order_customer_id,
+                customerName: customer.customer_name,
+                quantity: customer.quantity,
+                completed: customer.completed,
+              })),
+            }
+            : category
+        )
+      );
+    } else {
+      console.error(
+        "Failed to persist customer quantity"
+      );
+    }
+  };
+
+  const handleAddNewCategory = async (payload: {
+    recipeId: string;
+    orderName: string;
+    date: string;
+    customers: Array<{
+      customerName: string;
+      quantity: number;
+    }>;
+  }) => {
+    try {
+      const response = await fetch("/api/order-lists", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          order_name:
+            payload.orderName || "New Order List",
+          date:
+            payload.date ||
+            new Date().toISOString().slice(0, 10),
+          priority: false,
+          recipe_id: payload.recipeId,
+          customers: payload.customers
+            .filter(
+              (customer) =>
+                customer.customerName.trim().length > 0
+            )
+            .map((customer) => ({
+              customer_name:
+                customer.customerName.trim(),
+              quantity: Math.max(
+                1,
+                Number(customer.quantity) || 1
+              ),
+              completed: false,
+            })),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => null);
+
+        throw new Error(
+          errorData?.error ||
+          "Failed to create order list"
+        );
+      }
+
+      const result = await response.json();
+      const createdOrder = result.data;
+
+      const newCategory: OrderCategory = {
+        id: createdOrder.order_list_id,
+        orderName: createdOrder.order_name,
+        date: createdOrder.date,
+        priority: createdOrder.priority,
+        customers: (
+          createdOrder.order_list_customers ?? []
+        ).map((customer: any) => ({
+          id: customer.order_customer_id,
+          customerName: customer.customer_name,
+          quantity: customer.quantity,
+          completed: customer.completed,
+        })),
+      };
+
+      setCategories((current) => [
+        newCategory,
+        ...current,
+      ]);
+
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error(
+        "Failed to create order list:",
+        error
+      );
+    }
+  };
+
+  const togglePriority = async (categoryId: string) => {
+    const category = categories.find(
+      (category) => category.id === categoryId
+    );
+
+    if (!category) {
+      return;
+    }
+
+    const updatedCategory: OrderCategory = {
+      ...category,
+      priority: !category.priority,
+    };
+
+    setCategories((current) =>
+      current.map((category) =>
+        category.id === categoryId
+          ? updatedCategory
+          : category
+      )
+    );
+
+    try {
+      const response = await fetch(
+        `/api/order-lists/${categoryId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            priority: updatedCategory.priority,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => null);
+
+        throw new Error(
+          errorData?.error ||
+          "Failed to save priority"
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Failed to persist priority:",
+        error
+      );
+    }
   };
 
   const totalLists = categories.length;
+
   const totalCustomers = categories.reduce(
-    (sum, category) => sum + category.customers.length,
+    (sum, category) =>
+      sum + category.customers.length,
     0
   );
+
   const totalCompleted = categories.reduce(
     (sum, category) =>
-      sum + category.customers.filter((customer) => customer.completed).length,
+      sum +
+      category.customers.filter(
+        (customer) => customer.completed
+      ).length,
     0
   );
 
@@ -210,21 +616,27 @@ export default function OrderListPage() {
     },
   ];
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const normalizedQuery =
+    searchQuery.trim().toLowerCase();
+
   const filteredCategories =
     normalizedQuery.length === 0
       ? categories
       : categories.filter(
-          (category) =>
-            category.orderName.toLowerCase().includes(normalizedQuery) ||
-            category.customers.some((customer) =>
-              customer.customerName.toLowerCase().includes(normalizedQuery)
-            )
-        );
+        (category) =>
+          category.orderName
+            .toLowerCase()
+            .includes(normalizedQuery) ||
+          category.customers.some((customer) =>
+            customer.customerName
+              .toLowerCase()
+              .includes(normalizedQuery)
+          )
+      );
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#FFF5FB] via-[#FFF9FC] to-[#FDF0F7] px-4 py-8 text-[#5A0D36]">
-      {/*decorative blobs*/}
+      {/* decorative blobs */}
       <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#F7A9CF]/25 blur-3xl" />
       <div className="pointer-events-none absolute -right-24 top-1/2 h-80 w-80 rounded-full bg-[#B185DB]/20 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-[#FFC3D0]/25 blur-3xl" />
@@ -240,9 +652,11 @@ export default function OrderListPage() {
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D291BC]">
                 Weekly Orders
               </p>
+
               <h1 className="mt-1 text-4xl font-black tracking-tight text-[#5A0D36]">
                 ORDER LIST
               </h1>
+
               <p className="mt-1 text-sm font-medium text-[#B185DB]">
                 Manage your weekly bakes with ease
               </p>
@@ -252,32 +666,54 @@ export default function OrderListPage() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              aria-label={isPriorityMode ? "Done prioritizing" : "Toggle priority mode"}
-              onClick={() => setIsPriorityMode((prev) => !prev)}
-              className={`flex items-center gap-2 rounded-full border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition ${
+              aria-label={
                 isPriorityMode
-                  ? "border-[#C9A06B] bg-[#C9A06B] text-white shadow-md"
-                  : "border-pink-100 bg-white text-[#5A0D36] shadow-sm hover:bg-pink-50"
-              }`}
+                  ? "Done prioritizing"
+                  : "Toggle priority mode"
+              }
+              onClick={() =>
+                setIsPriorityMode((prev) => !prev)
+              }
+              className={`flex items-center gap-2 rounded-full border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition ${isPriorityMode
+                ? "border-[#C9A06B] bg-[#C9A06B] text-white shadow-md"
+                : "border-pink-100 bg-white text-[#5A0D36] shadow-sm hover:bg-pink-50"
+                }`}
             >
-              <Star className={`h-5 w-5 ${isPriorityMode ? "fill-current" : ""}`} />
-              {isPriorityMode && <span className="hidden sm:inline">Done</span>}
+              <Star
+                className={`h-5 w-5 ${isPriorityMode ? "fill-current" : ""
+                  }`}
+              />
+
+              {isPriorityMode && (
+                <span className="hidden sm:inline">
+                  Done
+                </span>
+              )}
             </button>
 
             <button
               type="button"
-              aria-label={isDeleteMode ? "Done deleting" : "Toggle delete mode"}
-              onClick={() => setIsDeleteMode((prev) => !prev)}
-              className={`flex items-center gap-2 rounded-full border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition ${
+              aria-label={
                 isDeleteMode
-                  ? "border-[#5A0D36] bg-[#5A0D36] text-white shadow-md"
-                  : "border-pink-100 bg-white text-[#5A0D36] shadow-sm hover:bg-pink-50"
-              }`}
+                  ? "Done deleting"
+                  : "Toggle delete mode"
+              }
+              onClick={() =>
+                setIsDeleteMode((prev) => !prev)
+              }
+              className={`flex items-center gap-2 rounded-full border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition ${isDeleteMode
+                ? "border-[#5A0D36] bg-[#5A0D36] text-white shadow-md"
+                : "border-pink-100 bg-white text-[#5A0D36] shadow-sm hover:bg-pink-50"
+                }`}
             >
               <Trash2 className="h-5 w-5" />
+
               {isDeleteMode && (
                 <>
-                  <span className="hidden sm:inline">Done</span>
+                  <span className="hidden sm:inline">
+                    Done
+                  </span>
+
                   <Check className="h-5 w-5" />
                 </>
               )}
@@ -294,7 +730,7 @@ export default function OrderListPage() {
           </div>
         </div>
 
-        {/*stats strip*/}
+        {/* stats strip */}
         <div className="mb-8 flex flex-wrap gap-4">
           {stats.map((stat) => (
             <div
@@ -304,10 +740,12 @@ export default function OrderListPage() {
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF7FB] text-[#D291BC]">
                 <stat.icon className="h-5 w-5" />
               </span>
+
               <div>
                 <p className="text-xl font-black leading-none text-[#5A0D36]">
                   {stat.value}
                 </p>
+
                 <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B185DB]">
                   {stat.label}
                 </p>
@@ -316,17 +754,21 @@ export default function OrderListPage() {
           ))}
         </div>
 
-        {/*search bar*/}
+        {/* search bar */}
         <div className="mb-8 flex items-center gap-4">
           <div className="flex flex-1 items-center gap-3 rounded-full border border-pink-100/80 bg-white/90 px-5 py-3 shadow-sm backdrop-blur">
             <Search className="h-5 w-5 shrink-0 text-[#D291BC]" />
+
             <input
               type="text"
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) =>
+                setSearchQuery(event.target.value)
+              }
               placeholder="Search by order name or customer..."
               className="w-full bg-transparent text-sm font-semibold text-[#5A0D36] placeholder:text-zinc-400 focus:outline-none"
             />
+
             {searchQuery.length > 0 && (
               <button
                 type="button"
@@ -338,39 +780,63 @@ export default function OrderListPage() {
               </button>
             )}
           </div>
+
           {normalizedQuery.length > 0 && (
             <span className="shrink-0 text-xs font-bold uppercase tracking-[0.18em] text-[#B185DB]">
-              {filteredCategories.length} of {categories.length}
+              {filteredCategories.length} of{" "}
+              {categories.length}
             </span>
           )}
         </div>
 
         <div className="flex flex-wrap justify-start gap-6">
-          {filteredCategories.map((category, index) => (
-            <div key={category.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 60}ms` }}>
-              <OrderListCard
-                category={category}
-                isDeleteMode={isDeleteMode}
-                isPriorityMode={isPriorityMode}
-                onDelete={(id) =>
-                  setCategoryToDelete(
-                    categories.find((category) => category.id === id) ?? null
-                  )
-                }
-                onView={(id) =>
-                  setCategoryToView(
-                    categories.find((category) => category.id === id) ?? null
-                  )
-                }
-                onTogglePriority={togglePriority}
-                onAddCustomer={addCustomerToCategory}
-                onRemoveCustomer={removeCustomerFromCategory}
-                onUpdateCustomer={updateCustomerInCategory}
-                onToggleStatus={toggleOrderStatus}
-                onUpdateQuantity={updateCustomerQuantity}
-              />
-            </div>
-          ))}
+          {filteredCategories.map(
+            (category, index) => (
+              <div
+                key={category.id}
+                className="animate-fade-in-up"
+                style={{
+                  animationDelay: `${index * 60}ms`,
+                }}
+              >
+                <OrderListCard
+                  category={category}
+                  isDeleteMode={isDeleteMode}
+                  isPriorityMode={isPriorityMode}
+                  onDelete={(id) =>
+                    setCategoryToDelete(
+                      categories.find(
+                        (category) =>
+                          category.id === id
+                      ) ?? null
+                    )
+                  }
+                  onView={(id) =>
+                    setCategoryToView(
+                      categories.find(
+                        (category) =>
+                          category.id === id
+                      ) ?? null
+                    )
+                  }
+                  onTogglePriority={togglePriority}
+                  onAddCustomer={
+                    addCustomerToCategory
+                  }
+                  onRemoveCustomer={
+                    removeCustomerFromCategory
+                  }
+                  onUpdateCustomer={
+                    updateCustomerInCategory
+                  }
+                  onToggleStatus={toggleOrderStatus}
+                  onUpdateQuantity={
+                    updateCustomerQuantity
+                  }
+                />
+              </div>
+            )
+          )}
         </div>
       </div>
 
@@ -382,7 +848,9 @@ export default function OrderListPage() {
 
       <ConfirmDeleteModal
         isOpen={categoryToDelete !== null}
-        categoryName={categoryToDelete?.orderName ?? ""}
+        categoryName={
+          categoryToDelete?.orderName ?? ""
+        }
         onConfirm={handleConfirmDelete}
         onClose={() => setCategoryToDelete(null)}
       />
