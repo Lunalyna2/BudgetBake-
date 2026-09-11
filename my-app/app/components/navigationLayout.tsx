@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
+
 import TopNavbar from "../top_navbar/topNavbar";
 import Navbar from "../navbar/navbar";
 
@@ -10,6 +12,12 @@ export default function NavigationLayout({
   children: React.ReactNode;
 }) {
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
+
+  const pathname = usePathname();
+
+  // Hide navbar on login and sign-in pages
+  const isAuthPage =
+    pathname === "/login" || pathname === "/sign-in";
 
   const toggleNavbar = () => {
     setIsNavbarOpen((previous) => !previous);
@@ -21,19 +29,25 @@ export default function NavigationLayout({
 
   return (
     <div className="min-h-screen bg-[#FDFCFB]">
-      {/*top navbar*/}
-      <TopNavbar onMenuClick={toggleNavbar} />
+      {/* Only show navigation on non-auth pages */}
+      {!isAuthPage && (
+        <>
+          {/* Top Navbar */}
+          <TopNavbar onMenuClick={toggleNavbar} />
 
-      {/*sidebar*/}
-      <Navbar
-        isOpen={isNavbarOpen}
-        onClose={closeNavbar}
-      />
+          {/* Sidebar */}
+          <Navbar
+            isOpen={isNavbarOpen}
+            onClose={closeNavbar}
+          />
+        </>
+      )}
 
-      {/*main content*/}
-      <main className="min-h-screen pt-18">
+      {/* Main Content */}
+      <main className={isAuthPage ? "min-h-screen" : "min-h-screen pt-18"}>
         {children}
       </main>
     </div>
   );
 }
+

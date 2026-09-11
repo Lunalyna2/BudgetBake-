@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import React from "react";
-import { House, BookOpen, ClipboardList, Calculator, Icon } from "lucide-react";
+import { BookOpen, ClipboardList, Calculator } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface NavbarProps {
   isOpen: boolean;
@@ -10,11 +11,6 @@ interface NavbarProps {
 }
 
 const navLinks = [
-  {
-    name: "HOME PAGE",
-    href: "/homepage",
-    icon: House,
-  },
   {
     name: "RECIPE LIBRARY",
     href: "/recipe-library",
@@ -33,6 +29,12 @@ const navLinks = [
 ];
 
 const Navbar: React.FC<NavbarProps> = ({ isOpen, onClose }) => {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    router.push("/login");
+  };
+
   return (
     <aside
       className={`fixed left-0 top-0 z-60 flex h-screen w-65 flex-col bg-white shadow-xl transition-transform duration-300 ${
@@ -52,7 +54,7 @@ const Navbar: React.FC<NavbarProps> = ({ isOpen, onClose }) => {
             </p>
           </div>
 
-          {/*back*/}
+          {/*close*/}
           <button
             type="button"
             onClick={onClose}
@@ -62,48 +64,35 @@ const Navbar: React.FC<NavbarProps> = ({ isOpen, onClose }) => {
             ←
           </button>
         </div>
-
-        {/*user*/}
-        <div className="mt-3 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-white" />
-
-          <div>
-            <p className="text-sm font-bold text-white">
-              User
-            </p>
-
-          </div>
-        </div>
       </div>
 
       {/*navigation*/}
       <nav className="flex flex-1 flex-col px-7 pt-5">
         <div className="space-y-7">
-        {navLinks.map((link) => {
+          {navLinks.map((link) => {
             const Icon = link.icon;
 
             return (
-                <Link
+              <Link
                 key={link.name}
                 href={link.href}
-                className="flex items-center gap-4 text-[12px] font-bold text-[#7A4428] transition hover:text-[#D83E72]"
-                >
+                className="flex items-center gap-4 text-[12px] font-bold text-[#7A4428] transition hover:text-[#D83E72]">
                 <span className="flex w-5 justify-center">
-                    <Icon size={23} strokeWidth={2} />
+                  <Icon size={23} strokeWidth={2} />
                 </span>
 
                 <span>{link.name}</span>
-                </Link>
+              </Link>
             );
-            })}
+          })}
         </div>
 
         {/*logout*/}
         <div className="mt-auto pb-6">
           <button
             type="button"
-            className="flex items-center gap-4 text-[12px] font-bold text-[#7A4428] transition hover:text-red-400"
-          >
+            onClick={handleLogout}
+            className="flex cursor-pointer items-center gap-4 text-[12px] font-bold text-[#7A4428] transition hover:text-red-400">
             <span className="text-[24px]">↪</span>
             <span>LOG OUT</span>
           </button>
@@ -113,8 +102,7 @@ const Navbar: React.FC<NavbarProps> = ({ isOpen, onClose }) => {
       {/*footer*/}
       <div className="px-6 pb-6 text-left">
         <p className="text-[8px] leading-6px text-black">
-          © 2026 BudgetBake by
-          Hi Five Productions.
+          © 2026 BudgetBake by Hi Five Productions.
           <br />
           All rights reserved.
         </p>
@@ -124,3 +112,4 @@ const Navbar: React.FC<NavbarProps> = ({ isOpen, onClose }) => {
 };
 
 export default Navbar;
+
