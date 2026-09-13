@@ -13,7 +13,7 @@ export default function RecipeCard({ recipe, onEdit, isDeleteMode, onDelete }: R
   return (
     <div
       onClick={() => !isDeleteMode && onEdit(recipe)}
-      className="group relative w-[260px] shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md"
+      className="group relative w-65 shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md"
     >
       {isDeleteMode && (
         <button

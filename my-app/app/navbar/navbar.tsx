@@ -59,8 +59,7 @@ const Navbar: React.FC<NavbarProps> = ({ isOpen, onClose }) => {
             type="button"
             onClick={onClose}
             aria-label="Close navigation"
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-2 border-white text-lg font-bold text-white transition hover:bg-white hover:text-[#D83E72]"
-          >
+            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-2 border-white text-lg font-bold text-white transition hover:bg-white hover:text-[#D83E72]">
             ←
           </button>
         </div>
@@ -76,7 +75,9 @@ const Navbar: React.FC<NavbarProps> = ({ isOpen, onClose }) => {
               <Link
                 key={link.name}
                 href={link.href}
-                className="flex items-center gap-4 text-[12px] font-bold text-[#7A4428] transition hover:text-[#D83E72]">
+                onClick={onClose}
+                className="flex items-center gap-4 text-[12px] font-bold text-[#7A4428] transition hover:text-[#D83E72]"
+              >
                 <span className="flex w-5 justify-center">
                   <Icon size={23} strokeWidth={2} />
                 </span>
@@ -92,8 +93,10 @@ const Navbar: React.FC<NavbarProps> = ({ isOpen, onClose }) => {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex cursor-pointer items-center gap-4 text-[12px] font-bold text-[#7A4428] transition hover:text-red-400">
+            className="flex cursor-pointer items-center gap-4 text-[12px] font-bold text-[#7A4428] transition hover:text-red-400"
+          >
             <span className="text-[24px]">↪</span>
+
             <span>LOG OUT</span>
           </button>
         </div>
@@ -112,4 +115,3 @@ const Navbar: React.FC<NavbarProps> = ({ isOpen, onClose }) => {
 };
 
 export default Navbar;
-

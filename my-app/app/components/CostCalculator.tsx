@@ -18,18 +18,7 @@ type Ingredient = {
   unitCost: number;
 };
 
-const ingredientTemplates: Ingredient[] = [
-  { id: "mock-1", name: "Flour", quantity: "300", unit: "g", unitCost: 0.05 },
-  { id: "mock-2", name: "Sugar", quantity: "150", unit: "g", unitCost: 0.06 },
-  { id: "mock-3", name: "Butter", quantity: "100", unit: "g", unitCost: 0.12 },
-  {
-    id: "mock-4",
-    name: "Chocolate Chips",
-    quantity: "150",
-    unit: "g",
-    unitCost: 0.2,
-  },
-];
+const ingredientTemplates: Ingredient[] = [];
 
 const currency = new Intl.NumberFormat("en-PH", {
   style: "currency",
@@ -61,7 +50,9 @@ export default function CostCalculator() {
         const data = await response.json();
 
         if (!data.success) {
-          throw new Error(data.message || "Failed to fetch recipes.");
+          throw new Error(
+            data.message || "Failed to fetch recipes.",
+          );
         }
 
         setRecipes(data.recipes);
@@ -90,58 +81,63 @@ export default function CostCalculator() {
         setSummaryGenerated(false);
         setIsSummaryModalOpen(false);
 
-        // ---------------------------------------------------------
-        // 1. Load the current Recipe Library ingredients
-        // ---------------------------------------------------------
+        //load the current Recipe Library ingredients
         const recipeResponse = await fetch(
           `/api/recipes/${selectedRecipeId}`,
         );
 
         if (!recipeResponse.ok) {
-          throw new Error("Failed to fetch recipe ingredients.");
+          throw new Error(
+            "Failed to fetch recipe ingredients.",
+          );
         }
 
         const recipeData = await recipeResponse.json();
 
         if (!recipeData.success || !recipeData.recipe) {
           throw new Error(
-            recipeData.message || "Failed to fetch recipe ingredients.",
+            recipeData.message ||
+              "Failed to fetch recipe ingredients.",
           );
         }
 
+        // IMPORTANT:
+        // The API returns the current Recipe Library ingredients
+        // inside recipe.ingredients.
         const recipeIngredients =
-          recipeData.recipe.recipe_ingredients ?? [];
+          recipeData.recipe.ingredients ?? [];
 
-        const formattedIngredients: Ingredient[] = recipeIngredients
-          .filter(
-            (item: {
-              ingredient_id?: string;
-              quantity?: number;
-              ingredients?: {
+        const formattedIngredients: Ingredient[] =
+          recipeIngredients
+            .filter(
+              (item: {
+                ingredient_id?: string;
+                quantity?: number;
                 name?: string;
                 unit?: string;
                 unit_price?: number;
-              };
-            }) => item.ingredient_id && item.ingredients,
-          )
-          .map(
-            (item: {
-              ingredient_id: string;
-              quantity: number;
-              ingredients: {
+              }) =>
+                item.ingredient_id &&
+                item.name,
+            )
+            .map(
+              (item: {
+                ingredient_id: string;
+                quantity: number;
                 name: string;
                 unit: string;
                 unit_price: number;
-              };
-            }) => ({
-              id: item.ingredient_id,
-              ingredient_id: item.ingredient_id,
-              name: item.ingredients.name,
-              quantity: String(item.quantity),
-              unit: item.ingredients.unit,
-              unitCost: Number(item.ingredients.unit_price) || 0,
-            }),
-          );
+              }) => ({
+                id: item.ingredient_id,
+                ingredient_id:
+                  item.ingredient_id,
+                name: item.name,
+                quantity: String(item.quantity),
+                unit: item.unit,
+                unitCost:
+                  Number(item.unit_price) || 0,
+              }),
+            );
 
         // First load the Recipe Library values.
         setIngredients(
@@ -150,9 +146,7 @@ export default function CostCalculator() {
             : ingredientTemplates,
         );
 
-        // ---------------------------------------------------------
-        // 2. Load the saved Cost Calculator calculation
-        // ---------------------------------------------------------
+        //load the saved Cost Calculator calculation
         const calculationResponse = await fetch(
           `/api/recipe-cost-calculations?recipe_id=${selectedRecipeId}`,
         );
@@ -163,7 +157,8 @@ export default function CostCalculator() {
           );
         }
 
-        const calculationData = await calculationResponse.json();
+        const calculationData =
+          await calculationResponse.json();
 
         if (!calculationData.success) {
           throw new Error(
@@ -172,39 +167,117 @@ export default function CostCalculator() {
           );
         }
 
-        // ---------------------------------------------------------
-        // 3. Restore the saved calculation if one exists
-        // ---------------------------------------------------------
+        // restore the saved calculation if one exists
         if (calculationData.calculation) {
-          const calculation = calculationData.calculation;
+          const calculation =
+            calculationData.calculation;
 
-          setBatchSize(String(calculation.batch_size));
-          setMarkup(Number(calculation.markup) || 0);
+          setBatchSize(
+            String(calculation.batch_size),
+          );
+
+          setMarkup(
+            Number(calculation.markup) || 0,
+          );
 
           const savedIngredients =
-            calculation.recipe_cost_calculation_ingredients ?? [];
+            calculation.recipe_cost_calculation_ingredients ??
+            [];
 
           if (savedIngredients.length > 0) {
-            setIngredients(
-              savedIngredients.map(
-                (ingredient: {
+            // Only restore saved Cost Calculator values for ingredients that still exist in the current Recipe Library.
+            const currentIngredientIds =
+              new Set(
+                formattedIngredients
+                  .map(
+                    (ingredient) =>
+                      ingredient.ingredient_id,
+                  )
+                  .filter(
+                    (
+                      ingredientId,
+                    ): ingredientId is string =>
+                      Boolean(ingredientId),
+                  ),
+              );
+
+            const savedIngredientMap =
+              new Map<
+                string,
+                {
                   calculation_ingredient_id: string;
                   ingredient_id?: string | null;
                   name: string;
                   quantity: number;
                   unit: string;
                   unit_cost: number;
-                }) => ({
-                  id: ingredient.calculation_ingredient_id,
-                  ingredient_id:
-                    ingredient.ingredient_id ?? undefined,
-                  name: ingredient.name,
-                  quantity: String(ingredient.quantity),
-                  unit: ingredient.unit,
-                  unitCost:
-                    Number(ingredient.unit_cost) || 0,
-                }),
-              ),
+                }
+              >();
+
+            savedIngredients.forEach(
+              (ingredient: {
+                calculation_ingredient_id: string;
+                ingredient_id?: string | null;
+                name: string;
+                quantity: number;
+                unit: string;
+                unit_cost: number;
+              }) => {
+                if (
+                  ingredient.ingredient_id &&
+                  currentIngredientIds.has(
+                    ingredient.ingredient_id,
+                  )
+                ) {
+                  savedIngredientMap.set(
+                    ingredient.ingredient_id,
+                    ingredient,
+                  );
+                }
+              },
+            );
+
+            // This guarantees deleted ingredients stay deleted. Start with the current Recipe Library list.
+            const reconciledIngredients =
+              formattedIngredients.map(
+                (currentIngredient) => {
+                  const savedIngredient =
+                    currentIngredient.ingredient_id
+                      ? savedIngredientMap.get(
+                          currentIngredient.ingredient_id,
+                        )
+                      : undefined;
+
+                  // No saved calculation for this ingredient.
+                  // Keep the current Recipe Library value.
+                  if (!savedIngredient) {
+                    return currentIngredient;
+                  }
+
+                  // Ingredient still exists in the Recipe Library.
+                  // Restore its saved Cost Calculator quantity
+                  // and unit cost.
+                  return {
+                    id: savedIngredient.calculation_ingredient_id,
+                    ingredient_id:
+                      currentIngredient.ingredient_id,
+                    name: currentIngredient.name,
+                    quantity: String(
+                      savedIngredient.quantity,
+                    ),
+                    unit: currentIngredient.unit,
+                    unitCost:
+                      Number(
+                        savedIngredient.unit_cost,
+                      ) || 0,
+                  };
+                },
+              );
+
+            setIngredients(
+              reconciledIngredients.length > 0
+                ? reconciledIngredients
+                : ingredientTemplates,
             );
           }
         }
@@ -216,7 +289,10 @@ export default function CostCalculator() {
         setSummaryGenerated(false);
         setIsSummaryModalOpen(false);
       } catch (error) {
-        console.error("Error fetching recipe data:", error);
+        console.error(
+          "Error fetching recipe data:",
+          error,
+        );
       }
     };
 
@@ -224,34 +300,125 @@ export default function CostCalculator() {
   }, [selectedRecipeId]);
 
   const selectedRecipe = recipes.find(
-    (recipe) => recipe.recipe_id === selectedRecipeId,
+    (recipe) =>
+      recipe.recipe_id === selectedRecipeId,
   );
 
   const recipeName = selectedRecipe?.name ?? "";
 
-  const totals = useMemo(() => {
-    const numericBatchSize = Number(batchSize) || 0;
+  /*
+   * Ingredient unit is used as the basis for costing.
+   *
+   * Example:
+   * 500 g × ₱0.06/g = ₱30
+   * 0.5 kg × ₱60/kg = ₱30
+   * 250 ml × ₱0.20/ml = ₱50
+   * 2 pcs × ₱10/pcs = ₱20
+   *
+   * The unitCost coming from the Recipe Library is therefore
+   * treated as the price for one unit of the selected unit.
+   */
+  const getIngredientTotalCost = (
+    ingredient: Ingredient,
+  ) => {
+    const quantity =
+      Number(ingredient.quantity) || 0;
 
-    const totalRecipeCost = ingredients.reduce(
-      (sum, ingredient) =>
-        sum +
-        Number(ingredient.quantity || 0) * ingredient.unitCost,
-      0,
-    );
+    const unitCost =
+      Number(ingredient.unitCost) || 0;
+
+    return quantity * unitCost;
+  };
+
+  /*
+   * Keep the unit display consistent with the ingredient's
+   * actual costing unit instead of always showing /g.
+   */
+  const getCostUnitLabel = (unit: string) => {
+    const normalizedUnit =
+      unit.trim().toLowerCase();
+
+    switch (normalizedUnit) {
+      case "g":
+      case "gram":
+      case "grams":
+        return "g";
+
+      case "kg":
+      case "kilogram":
+      case "kilograms":
+        return "kg";
+
+      case "ml":
+      case "milliliter":
+      case "milliliters":
+      case "millilitre":
+      case "millilitres":
+        return "ml";
+
+      case "l":
+      case "liter":
+      case "liters":
+      case "litre":
+      case "litres":
+        return "L";
+
+      case "pcs":
+      case "pc":
+      case "piece":
+      case "pieces":
+        return "pcs";
+
+      case "tbsp":
+      case "tablespoon":
+      case "tablespoons":
+        return "tbsp";
+
+      case "tsp":
+      case "teaspoon":
+      case "teaspoons":
+        return "tsp";
+
+      case "cup":
+      case "cups":
+        return "cup";
+
+      default:
+        return unit || "unit";
+    }
+  };
+
+  const totals = useMemo(() => {
+    const numericBatchSize =
+      Number(batchSize) || 0;
+
+    const totalRecipeCost =
+      ingredients.reduce(
+        (sum, ingredient) =>
+          sum +
+          getIngredientTotalCost(
+            ingredient,
+          ),
+        0,
+      );
 
     const costPerCookie =
       numericBatchSize > 0
-        ? totalRecipeCost / numericBatchSize
+        ? totalRecipeCost /
+          numericBatchSize
         : 0;
 
     const sellingPricePerCookie =
-      costPerCookie * (1 + markup / 100);
+      costPerCookie *
+      (1 + markup / 100);
 
     const totalSellingPrice =
-      sellingPricePerCookie * numericBatchSize;
+      sellingPricePerCookie *
+      numericBatchSize;
 
     const estimatedProfit =
-      totalSellingPrice - totalRecipeCost;
+      totalSellingPrice -
+      totalRecipeCost;
 
     return {
       totalRecipeCost,
@@ -286,7 +453,10 @@ export default function CostCalculator() {
     setIngredients((current) =>
       current.map((item) =>
         item.id === id
-          ? { ...item, [field]: value }
+          ? {
+              ...item,
+              [field]: value,
+            }
           : item,
       ),
     );
@@ -297,8 +467,12 @@ export default function CostCalculator() {
 
   const handleScaleBatch = () => {
     setBatchSize((current) => {
-      const numericValue = Number(current) || 0;
-      return String(Math.max(1, numericValue));
+      const numericValue =
+        Number(current) || 0;
+
+      return String(
+        Math.max(1, numericValue),
+      );
     });
 
     // User pressed Scale Batch, so Generate Summary is now allowed.
@@ -307,14 +481,20 @@ export default function CostCalculator() {
     setIsSummaryModalOpen(false);
   };
 
-  const normalizeNumericValue = (value: string) => {
+  const normalizeNumericValue = (
+    value: string,
+  ) => {
     if (value === "") return "";
 
     const trimmed = value.trim();
 
     if (trimmed === "") return "";
 
-    const cleaned = trimmed.replace(/^0+(?=\d)/, "");
+    const cleaned =
+      trimmed.replace(
+        /^0+(?=\d)/,
+        "",
+      );
 
     if (cleaned === "") return "0";
 
@@ -322,7 +502,8 @@ export default function CostCalculator() {
   };
 
   const handlePrintPdf = () => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined")
+      return;
 
     const printWindow = window.open(
       "",
@@ -359,6 +540,7 @@ export default function CostCalculator() {
             }
           </style>
         </head>
+
         <body>
           <h1>${recipeName}</h1>
 
@@ -369,80 +551,153 @@ export default function CostCalculator() {
 
           <div class="row">
             <span>Total Recipe Cost</span>
-            <span>${currency.format(totals.totalRecipeCost)}</span>
+            <span>${currency.format(
+              totals.totalRecipeCost,
+            )}</span>
           </div>
 
           <div class="row">
             <span>Cost per Cookie</span>
-            <span>${currency.format(totals.costPerCookie)}</span>
+            <span>${currency.format(
+              totals.costPerCookie,
+            )}</span>
           </div>
 
           <div class="row">
             <span>Selling Price per Cookie</span>
-            <span>${currency.format(totals.sellingPricePerCookie)}</span>
+            <span>${currency.format(
+              totals.sellingPricePerCookie,
+            )}</span>
           </div>
 
           <div class="row total">
             <span>Estimated Profit</span>
-            <span>${currency.format(totals.estimatedProfit)}</span>
+            <span>${currency.format(
+              totals.estimatedProfit,
+            )}</span>
           </div>
         </body>
       </html>
     `;
 
-    printWindow.document.write(summary);
+    printWindow.document.write(
+      summary,
+    );
+
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
   };
 
-  const handleGenerateSummary = async () => {
-    if (!batchScaled || !selectedRecipeId) return;
+  const handleGenerateSummary =
+    async () => {
+      if (
+        !batchScaled ||
+        !selectedRecipeId
+      )
+        return;
 
-    try {
-      const response = await fetch(
-        "/api/recipe-cost-calculations",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+      try {
+        const response = await fetch(
+          "/api/recipe-cost-calculations",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              recipe_id:
+                selectedRecipeId,
+
+              batch_size:
+                Number(batchSize),
+
+              markup,
+
+              total_recipe_cost:
+                totals.totalRecipeCost,
+
+              cost_per_unit:
+                totals.costPerCookie,
+
+              suggested_price_per_unit:
+                totals.sellingPricePerCookie,
+
+              estimated_profit:
+                totals.estimatedProfit,
+
+              ingredients,
+            }),
           },
-          body: JSON.stringify({
-            recipe_id: selectedRecipeId,
-            batch_size: Number(batchSize),
-            markup,
-            total_recipe_cost: totals.totalRecipeCost,
-            cost_per_unit: totals.costPerCookie,
-            suggested_price_per_unit:
-              totals.sellingPricePerCookie,
-            estimated_profit: totals.estimatedProfit,
-            ingredients,
-          }),
-        },
-      );
+        );
 
-      const data = await response.json();
+        const data =
+          await response.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data.message ||
-            "Failed to save the cost calculation.",
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+          throw new Error(
+            data.message ||
+              "Failed to save the cost calculation.",
+          );
+        }
+
+        /*
+         * IMPORTANT:
+         * Also update the recipe's main cost in the
+         * recipes table.
+         *
+         * This makes the new Cost Calculator total
+         * appear in the Recipe Library.
+         *
+         * Nothing else in the recipe is changed.
+         */
+        const recipeCostResponse =
+          await fetch(
+            `/api/recipes/${selectedRecipeId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify({
+                cost:
+                  totals.totalRecipeCost,
+              }),
+            },
+          );
+
+        const recipeCostData =
+          await recipeCostResponse.json();
+
+        if (
+          !recipeCostResponse.ok ||
+          !recipeCostData.success
+        ) {
+          throw new Error(
+            recipeCostData.message ||
+              "Cost calculation was saved, but the recipe cost could not be updated.",
+          );
+        }
+
+        setSummaryGenerated(true);
+        setIsSummaryModalOpen(true);
+      } catch (error) {
+        console.error(
+          "Error saving cost calculation:",
+          error,
         );
       }
+    };
 
-      setSummaryGenerated(true);
-      setIsSummaryModalOpen(true);
-    } catch (error) {
-      console.error(
-        "Error saving cost calculation:",
-        error,
-      );
-    }
-  };
-
-  const handleCloseSummaryModal = () => {
-    setIsSummaryModalOpen(false);
-  };
+  const handleCloseSummaryModal =
+    () => {
+      setIsSummaryModalOpen(false);
+    };
 
   return (
     <main className="min-h-screen bg-[#fdf6f7] px-5 py-6 text-[#5d4a52]">
@@ -459,15 +714,18 @@ export default function CostCalculator() {
               </h1>
 
               <p className="text-[0.95rem] text-[#9a7182]">
-                Calculate the total cost, pricing, and profit
-                for your recipe.
+                Calculate the total cost,
+                pricing, and profit for your
+                recipe.
               </p>
             </div>
           </div>
 
           <div className="mb-5 rounded-[18px] border border-[#f1d3de] bg-[#fff6fa] p-4">
             <div className="mb-4 flex items-center gap-3 text-[#e96ca8]">
-              <span className="text-lg">📋</span>
+              <span className="text-lg">
+                📋
+              </span>
 
               <h2 className="text-[1.05rem] font-black uppercase tracking-[0.08em]">
                 Recipe Details
@@ -479,25 +737,42 @@ export default function CostCalculator() {
                 Recipe Name
 
                 <select
-                  value={selectedRecipeId}
+                  value={
+                    selectedRecipeId
+                  }
                   onChange={(e) => {
-                    setSelectedRecipeId(e.target.value);
+                    setSelectedRecipeId(
+                      e.target.value,
+                    );
+
                     setBatchScaled(false);
-                    setSummaryGenerated(false);
-                    setIsSummaryModalOpen(false);
+                    setSummaryGenerated(
+                      false,
+                    );
+                    setIsSummaryModalOpen(
+                      false,
+                    );
                   }}
                   className="mt-2 w-full rounded-xl border border-[#f0d3df] bg-white px-3 py-2.5 text-base font-medium text-[#4f3d44] outline-none focus:border-[#e96ca8]"
                 >
-                  <option value="">Select a recipe</option>
+                  <option value="">
+                    Select a recipe
+                  </option>
 
-                  {recipes.map((recipe) => (
-                    <option
-                      key={recipe.recipe_id}
-                      value={recipe.recipe_id}
-                    >
-                      {recipe.name}
-                    </option>
-                  ))}
+                  {recipes.map(
+                    (recipe) => (
+                      <option
+                        key={
+                          recipe.recipe_id
+                        }
+                        value={
+                          recipe.recipe_id
+                        }
+                      >
+                        {recipe.name}
+                      </option>
+                    ),
+                  )}
                 </select>
               </label>
 
@@ -509,26 +784,39 @@ export default function CostCalculator() {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    value={batchSize}
+                    value={
+                      batchSize
+                    }
                     onChange={(e) => {
                       const cleaned =
                         normalizeNumericValue(
-                          e.target.value,
+                          e.target
+                            .value,
                         );
 
                       setBatchSize(
-                        cleaned === "" ? "" : cleaned,
+                        cleaned ===
+                          ""
+                          ? ""
+                          : cleaned,
                       );
 
-                      setBatchScaled(false);
-                      setSummaryGenerated(false);
+                      setBatchScaled(
+                        false,
+                      );
+
+                      setSummaryGenerated(
+                        false,
+                      );
                     }}
                     className="w-full bg-transparent text-base font-medium text-[#4f3d44] outline-none"
                   />
 
                   <button
                     type="button"
-                    onClick={handleScaleBatch}
+                    onClick={
+                      handleScaleBatch
+                    }
                     className="rounded-lg bg-linear-to-r from-[#ea7bb3] to-[#e65aa0] px-3 py-2 text-sm font-bold text-white shadow-sm"
                   >
                     Scale Batch
@@ -540,7 +828,9 @@ export default function CostCalculator() {
 
           <div className="rounded-[18px] border border-[#f1d3de] bg-[#fff6fa] p-4">
             <div className="mb-4 flex items-center gap-3 text-[#e96ca8]">
-              <span className="text-lg">🥣</span>
+              <span className="text-lg">
+                🥣
+              </span>
 
               <h2 className="text-[1.05rem] font-black uppercase tracking-[0.08em]">
                 Ingredient Breakdown
@@ -549,113 +839,139 @@ export default function CostCalculator() {
 
             <div className="overflow-hidden rounded-[14px] border border-[#f4d8e2] bg-white">
               <div className="grid grid-cols-[1.3fr_0.9fr_0.7fr_1fr_0.7fr] bg-[#f7dfe9] px-4 py-3 text-[0.76rem] font-black uppercase tracking-[0.08em] text-[#cc6d96]">
-                <div>Ingredient</div>
-                <div>Quantity</div>
-                <div>Unit</div>
-                <div>Unit Cost</div>
-                <div>Total Cost</div>
+                <div>
+                  Ingredient
+                </div>
+
+                <div>
+                  Quantity
+                </div>
+
+                <div>
+                  Unit
+                </div>
+
+                <div>
+                  Unit Cost
+                </div>
+
+                <div>
+                  Total Cost
+                </div>
               </div>
 
-              {ingredients.map((ingredient) => (
-                <div
-                  key={ingredient.id}
-                  className="grid grid-cols-[1.3fr_0.9fr_0.7fr_1fr_0.7fr] items-center gap-2 border-t border-[#f6dfe8] px-4 py-3"
-                >
-                  <div className="flex items-center gap-2 text-[#4a3b41]">
-                    <span className="text-lg">
-                      {ingredient.name.includes("Flour")
-                        ? "🌾"
-                        : ingredient.name.includes("Sugar")
-                          ? "🥄"
-                          : ingredient.name.includes(
-                                "Butter",
-                              )
-                            ? "🧈"
-                            : ingredient.name.includes(
-                                  "Chocolate",
-                                )
-                              ? "🍫"
-                              : "✨"}
-                    </span>
-
-                    <input
-                      value={ingredient.name}
-                      onChange={(e) =>
-                        handleIngredientChange(
-                          ingredient.id,
-                          "name",
-                          e.target.value,
-                        )
-                      }
-                      className="w-full bg-transparent font-medium text-[#4f3d44] outline-none"
-                    />
-                  </div>
-
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={ingredient.quantity}
-                    onChange={(e) => {
-                      const sanitized =
-                        normalizeNumericValue(
-                          e.target.value,
-                        );
-
-                      handleIngredientChange(
-                        ingredient.id,
-                        "quantity",
-                        sanitized,
-                      );
-                    }}
-                    className="w-full rounded-lg border border-[#f0d3df] bg-[#fff9fb] px-2 py-1.5 text-sm text-[#4f3d44] outline-none"
-                  />
-
-                  <input
-                    value={ingredient.unit}
-                    onChange={(e) =>
-                      handleIngredientChange(
-                        ingredient.id,
-                        "unit",
-                        e.target.value,
-                      )
+              {ingredients.map(
+                (ingredient) => (
+                  <div
+                    key={
+                      ingredient.id
                     }
-                    className="w-full rounded-lg border border-[#f0d3df] bg-[#fff9fb] px-2 py-1.5 text-sm text-[#4f3d44] outline-none"
-                  />
-
-                  <div className="flex items-center rounded-lg border border-[#f0d3df] bg-[#fff9fb] px-2 py-1.5 text-sm text-[#4f3d44]">
-                    <span className="mr-1">₱</span>
+                    className="grid grid-cols-[1.3fr_0.9fr_0.7fr_1fr_0.7fr] items-center gap-2 border-t border-[#f6dfe8] px-4 py-3"
+                  >
+                    <div className="flex items-center gap-2 text-[#4a3b41]">
+                      <input
+                        value={
+                          ingredient.name
+                        }
+                        onChange={(e) =>
+                          handleIngredientChange(
+                            ingredient.id,
+                            "name",
+                            e.target
+                              .value,
+                          )
+                        }
+                        className="w-full bg-transparent font-medium text-[#4f3d44] outline-none"
+                      />
+                    </div>
 
                     <input
-                      type="number"
-                      step="0.01"
-                      value={ingredient.unitCost}
+                      type="text"
+                      inputMode="decimal"
+                      pattern="[0-9]*"
+                      value={
+                        ingredient.quantity
+                      }
+                      onChange={(e) => {
+                        const sanitized =
+                          normalizeNumericValue(
+                            e.target
+                              .value,
+                          );
+
+                        handleIngredientChange(
+                          ingredient.id,
+                          "quantity",
+                          sanitized,
+                        );
+                      }}
+                      className="w-full rounded-lg border border-[#f0d3df] bg-[#fff9fb] px-2 py-1.5 text-sm text-[#4f3d44] outline-none"
+                    />
+
+                    <input
+                      value={
+                        ingredient.unit
+                      }
                       onChange={(e) =>
                         handleIngredientChange(
                           ingredient.id,
-                          "unitCost",
-                          Number(e.target.value) || 0,
+                          "unit",
+                          e.target.value,
                         )
                       }
-                      className="w-full bg-transparent outline-none"
+                      className="w-full rounded-lg border border-[#f0d3df] bg-[#fff9fb] px-2 py-1.5 text-sm text-[#4f3d44] outline-none"
                     />
 
-                    <span className="ml-1">/g</span>
-                  </div>
+                    <div className="flex items-center rounded-lg border border-[#f0d3df] bg-[#fff9fb] px-2 py-1.5 text-sm text-[#4f3d44]">
+                      <span className="mr-1">
+                        ₱
+                      </span>
 
-                  <div className="text-right font-semibold text-[#4f3d44]">
-                    {currency.format(
-                      (Number(ingredient.quantity) || 0) *
-                        ingredient.unitCost,
-                    )}
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={
+                          ingredient.unitCost
+                        }
+                        onChange={(e) =>
+                          handleIngredientChange(
+                            ingredient.id,
+                            "unitCost",
+                            Number(
+                              e.target
+                                .value,
+                            ) || 0,
+                          )
+                        }
+                        className="w-full bg-transparent outline-none"
+                      />
+
+                      <span className="ml-1">
+                        /
+                        {getCostUnitLabel(
+                          ingredient.unit,
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="text-right font-semibold text-[#4f3d44]">
+                      {currency.format(
+                        getIngredientTotalCost(
+                          ingredient,
+                        ),
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ),
+              )}
             </div>
 
             <button
               type="button"
-              onClick={handleAddIngredient}
+              onClick={
+                handleAddIngredient
+              }
               className="mt-4 inline-flex items-center gap-2 rounded-xl border border-dashed border-[#e9a9c3] bg-[#fff1f7] px-4 py-2.5 text-sm font-bold text-[#d96aa2]"
             >
               <span>＋</span>
@@ -666,7 +982,9 @@ export default function CostCalculator() {
           <div className="mt-5 flex justify-center">
             <button
               type="button"
-              onClick={handleGenerateSummary}
+              onClick={
+                handleGenerateSummary
+              }
               disabled={!batchScaled}
               className={`inline-flex min-w-65 items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-[0.08em] text-white shadow-[0_10px_24px_rgba(233,106,162,0.28)] transition ${
                 batchScaled
@@ -687,7 +1005,9 @@ export default function CostCalculator() {
             <div className="flex items-start justify-between gap-4 border-b border-[#f2d8e3] pb-4">
               <div>
                 <div className="flex items-center gap-3 text-[#e96ca8]">
-                  <span className="text-2xl">🧾</span>
+                  <span className="text-2xl">
+                    🧾
+                  </span>
 
                   <h2 className="text-[1.4rem] font-black uppercase tracking-[0.08em]">
                     Recipe Summary
@@ -695,13 +1015,16 @@ export default function CostCalculator() {
                 </div>
 
                 <p className="mt-1 text-sm text-[#8f6b79]">
-                  Here’s your generated receipt-style summary.
+                  Here’s your generated
+                  receipt-style summary.
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={handleCloseSummaryModal}
+                onClick={
+                  handleCloseSummaryModal
+                }
                 className="rounded-full border border-[#f1d3de] bg-white px-3 py-2 text-sm font-bold text-[#e96ca8] hover:bg-[#fff4f8]"
               >
                 Close
@@ -716,7 +1039,11 @@ export default function CostCalculator() {
                   </h3>
 
                   <p className="mt-1 text-sm text-[#8f6b79]">
-                    Batch Size: {Number(batchSize) || 0} Cookies
+                    Batch Size:{" "}
+                    {Number(
+                      batchSize,
+                    ) || 0}{" "}
+                    Cookies
                   </p>
                 </div>
 
@@ -764,7 +1091,8 @@ export default function CostCalculator() {
 
                 <div className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
                   <span className="text-[#7b5b67]">
-                    Selling Price per Cookie
+                    Selling Price per
+                    Cookie
                   </span>
 
                   <span className="font-bold text-[#4f3d44]">
@@ -801,7 +1129,9 @@ export default function CostCalculator() {
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <button
                 type="button"
-                onClick={handlePrintPdf}
+                onClick={
+                  handlePrintPdf
+                }
                 className="rounded-2xl border border-[#f0d3df] bg-white px-4 py-3 text-sm font-bold text-[#d96aa2] hover:bg-[#fff5f9]"
               >
                 Print
@@ -809,7 +1139,9 @@ export default function CostCalculator() {
 
               <button
                 type="button"
-                onClick={handlePrintPdf}
+                onClick={
+                  handlePrintPdf
+                }
                 className="rounded-2xl border border-[#f0d3df] bg-white px-4 py-3 text-sm font-bold text-[#d96aa2] hover:bg-[#fff5f9]"
               >
                 Save PDF
@@ -817,7 +1149,9 @@ export default function CostCalculator() {
 
               <button
                 type="button"
-                onClick={handleCloseSummaryModal}
+                onClick={
+                  handleCloseSummaryModal
+                }
                 className="rounded-2xl bg-linear-to-r from-[#ea78b3] to-[#e55ea4] px-4 py-3 text-sm font-black text-white shadow-sm"
               >
                 Done

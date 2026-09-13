@@ -153,7 +153,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // Make sure the recipe belongs to the logged-in user.
+        //make sure the recipe belongs to the logged-in user.
         const { data: recipe, error: recipeError } = await supabase
             .from("recipes")
             .select("recipe_id")
@@ -171,7 +171,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // Check whether this recipe already has a saved calculation.
+        //check whether this recipe already has a saved calculation.
         const { data: existingCalculation, error: existingCalculationError } =
             await supabase
                 .from("recipe_cost_calculations")
@@ -198,7 +198,7 @@ export async function POST(request: Request) {
         let calculation;
 
         if (existingCalculation) {
-            // Update the existing calculation for this recipe.
+            //update the existing calculation for this recipe.
             const { data: updatedCalculation, error: updateError } = await supabase
                 .from("recipe_cost_calculations")
                 .update({
@@ -229,7 +229,7 @@ export async function POST(request: Request) {
 
             calculation = updatedCalculation;
 
-            // Remove the old ingredient snapshot.
+            //remove the old ingredient snapshot.
             const { error: deleteIngredientsError } = await supabase
                 .from("recipe_cost_calculation_ingredients")
                 .delete()
@@ -250,7 +250,7 @@ export async function POST(request: Request) {
                 );
             }
         } else {
-            // No calculation exists yet, so create one.
+            //no calculation exists yet, so create one.
             const { data: newCalculation, error: calculationError } = await supabase
                 .from("recipe_cost_calculations")
                 .insert({
@@ -285,7 +285,7 @@ export async function POST(request: Request) {
             calculation = newCalculation;
         }
 
-        // Save the current ingredient snapshot.
+        //save the current ingredient snapshot.
         const ingredientRows = ingredients.map(
             (ingredient: {
                 ingredient_id?: string;

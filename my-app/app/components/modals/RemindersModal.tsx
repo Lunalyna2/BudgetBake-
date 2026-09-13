@@ -27,39 +27,93 @@ export default function RemindersModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-xs">
-      <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between border-b pb-4">
-          <h3 className="text-xl font-bold text-[#5A0D36]">All Reminders</h3>
+      <div className="w-full max-w-lg rounded-3xl border border-pink-100 bg-white p-6 shadow-2xl">
+        {/*header */}
+        <div className="flex items-center justify-between border-b border-pink-100 pb-4">
+          <h3 className="text-xl font-extrabold text-[#5A0D36]">
+            All Reminders
+          </h3>
+
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1 text-gray-400 hover:bg-gray-100"
+            className="
+              rounded-full
+              bg-linear-to-r
+              from-[#B185DB]/20
+              via-[#D291BC]/20
+              to-[#FFC3D0]/30
+              p-2
+              text-[#B185DB]
+              transition
+              hover:opacity-80
+            "
+            aria-label="Close reminders"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="mt-4 max-h-60 overflow-y-auto space-y-2 pr-1">
+        {/*reminder list*/}
+        <div className="mt-4 max-h-60 space-y-2 overflow-y-auto pr-1">
           {reminders.map((reminder) => (
             <div
               key={reminder.id}
-              className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 p-3"
+              className="
+                flex
+                items-center
+                justify-between
+                rounded-xl
+                border
+                border-pink-100
+                bg-linear-to-r
+                from-[#FFF8FC]
+                to-[#FFF1F7]
+                p-3
+                transition
+                hover:border-[#D291BC]/40
+              "
             >
-              <label className="flex cursor-pointer items-center gap-3 text-xs font-medium text-zinc-700">
+              <label className="flex cursor-pointer items-center gap-3 text-xs font-medium text-amber-900/80">
                 <input
                   type="checkbox"
                   checked={reminder.completed}
                   onChange={() => onToggleReminder(reminder.id)}
-                  className="h-4 w-4 rounded border-gray-300 text-[#E94E77]"
+                  className="
+                    h-4
+                    w-4
+                    cursor-pointer
+                    rounded
+                    border-pink-200
+                    accent-[#D291BC]
+                    focus:ring-2
+                    focus:ring-[#FFC3D0]
+                  "
                 />
-                <span className={reminder.completed ? "line-through opacity-50" : ""}>
+
+                <span
+                  className={
+                    reminder.completed
+                      ? "line-through opacity-50"
+                      : ""
+                  }
+                >
                   {reminder.text}
                 </span>
               </label>
+
               <button
                 type="button"
                 onClick={() => onDeleteReminder(reminder.id)}
-                className="text-gray-400 hover:text-red-500"
+                className="
+                  rounded-full
+                  p-2
+                  text-[#D291BC]
+                  transition
+                  hover:bg-[#FFC3D0]/30
+                  hover:text-[#B185DB]
+                "
+                aria-label="Delete reminder"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -67,18 +121,54 @@ export default function RemindersModal({
           ))}
         </div>
 
-        <div className="mt-4 flex gap-2 border-t pt-4">
+        {/*add reminder */}
+        <div className="mt-4 flex gap-2 border-t border-pink-100 pt-4">
           <input
             type="text"
             value={newReminderText}
-            onChange={(event) => onNewReminderTextChange(event.target.value)}
+            onChange={(event) =>
+              onNewReminderTextChange(event.target.value)
+            }
             placeholder="New reminder..."
-            className="w-full rounded-xl border border-gray-200 px-4 py-2 text-xs focus:border-pink-400 focus:outline-none"
+            className="
+              w-full
+              rounded-xl
+              border
+              border-pink-100
+              bg-[#FFF8FC]
+              px-4
+              py-2
+              text-xs
+              text-[#5A0D36]
+              placeholder:text-pink-300
+              focus:border-[#D291BC]
+              focus:outline-none
+              focus:ring-2
+              focus:ring-[#FFC3D0]/40
+            "
           />
+
           <button
             type="button"
             onClick={onAddReminder}
-            className="shrink-0 rounded-xl bg-[#5A0D36] px-4 py-2 text-xs font-bold text-white hover:bg-[#430928]"
+            className="
+              shrink-0
+              rounded-full
+              bg-linear-to-r
+              from-[#B185DB]
+              via-[#D291BC]
+              to-[#FFC3D0]
+              px-5
+              py-2
+              text-xs
+              font-bold
+              uppercase
+              tracking-wide
+              text-white
+              shadow-md
+              transition
+              hover:opacity-95
+            "
           >
             Add
           </button>

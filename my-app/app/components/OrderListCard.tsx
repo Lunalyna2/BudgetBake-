@@ -41,7 +41,7 @@ function CompletionProgress({ category }: { category: OrderCategory }) {
     <div className="flex items-center gap-3">
       <div className="h-1.5 w-24 overflow-hidden rounded-full bg-pink-100">
         <div
-          className="animate-progress-grow h-full rounded-full bg-gradient-to-r from-[#B185DB] to-[#D291BC]"
+          className="animate-progress-grow h-full rounded-full bg-linear-to-r from-[#B185DB] to-[#D291BC]"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -119,7 +119,7 @@ export default function OrderListTable({
   return (
     <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse text-left">
+        <table className="w-full min-w-180 border-collapse text-left">
           <thead>
             <tr className="border-b border-zinc-100 bg-zinc-50/80">
               <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
