@@ -3,7 +3,7 @@
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
+import { initialRecipes } from "../data/initialData";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -60,6 +60,25 @@ export default function SignUpPage() {
       return;
     }
 
+    const defaultRecipes = initialRecipes.map((recipe) => ({
+      user_id: data.user.id,
+      name: recipe.title,
+      description: recipe.notes,
+      base_servings: 1,
+      cost: recipe.cost,
+      image_url: recipe.imageUrl,
+    }));
+
+    const { error: recipesError } = await supabase
+      .from("recipes")
+      .insert(defaultRecipes);
+
+    if (recipesError) {
+      console.error("Default recipes creation error:", recipesError);
+      setShowInvalidInput(true);
+      return;
+    }
+
     router.push("/cost_calculator");
   };
 
@@ -69,10 +88,14 @@ export default function SignUpPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-lg"
       >
-        <h1 className="mb-6 text-center text-3xl font-bold text-purple-600">SIGN UP</h1>
+        <h1 className="mb-6 text-center text-3xl font-bold text-purple-600">
+          SIGN UP
+        </h1>
 
         {showInvalidInput && (
-          <p className="mb-4 text-center text-sm font-medium text-red-500">Invalid input</p>
+          <p className="mb-4 text-center text-sm font-medium text-red-500">
+            Invalid input
+          </p>
         )}
 
         <div className="mb-4">
@@ -84,8 +107,11 @@ export default function SignUpPage() {
             value={formData.name}
             onChange={handleChange}
             placeholder="John Doe"
-            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
-              }`}
+            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${
+              showInvalidInput
+                ? "border-red-400 focus:border-red-500"
+                : "border-transparent focus:border-pink-500"
+            }`}
           />
         </div>
 
@@ -99,8 +125,11 @@ export default function SignUpPage() {
             value={formData.email}
             onChange={handleChange}
             placeholder="johndoe@gmail.com"
-            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
-              }`}
+            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${
+              showInvalidInput
+                ? "border-red-400 focus:border-red-500"
+                : "border-transparent focus:border-pink-500"
+            }`}
           />
         </div>
 
@@ -114,8 +143,11 @@ export default function SignUpPage() {
             value={formData.password}
             onChange={handleChange}
             placeholder="Password"
-            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${showInvalidInput ? "border-red-400 focus:border-red-500" : "border-transparent focus:border-pink-500"
-              }`}
+            className={`w-full rounded-md border-2 bg-gray-50 p-2 text-black focus:outline-none ${
+              showInvalidInput
+                ? "border-red-400 focus:border-red-500"
+                : "border-transparent focus:border-pink-500"
+            }`}
           />
         </div>
 
