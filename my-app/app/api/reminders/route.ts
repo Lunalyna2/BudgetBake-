@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
-
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function GET() {
   try {
-    const supabase =
-      await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
 
     const {
       data: { user },
-      error: userError,
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (userError || !user) {
+    if (authError || !user) {
       return NextResponse.json(
         {
           success: false,
@@ -22,26 +20,19 @@ export async function GET() {
       );
     }
 
-    const { data, error } = await supabase
+    const { data: reminders, error } = await supabase
       .from("reminders")
-      .select(
-        "reminder_id, text, completed, created_at"
-      )
+      .select("reminder_id, text, completed, created_at")
       .eq("user_id", user.id)
-      .order("created_at", {
-        ascending: true,
-      });
+      .order("created_at", { ascending: true });
 
     if (error) {
-      console.error(
-        "Failed to fetch reminders:",
-        error
-      );
+      console.error("Error fetching reminders:", error);
 
       return NextResponse.json(
         {
           success: false,
-          message: error.message,
+          message: "Failed to fetch reminders.",
         },
         { status: 500 }
       );
@@ -49,18 +40,15 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      reminders: data ?? [],
+      reminders: reminders ?? [],
     });
   } catch (error) {
-    console.error(
-      "Error fetching reminders:",
-      error
-    );
+    console.error("Unexpected error fetching reminders:", error);
 
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to fetch reminders.",
+        message: "Internal server error.",
       },
       { status: 500 }
     );
@@ -69,15 +57,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const supabase =
-      await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
 
     const {
       data: { user },
-      error: userError,
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (userError || !user) {
+    if (authError || !user) {
       return NextResponse.json(
         {
           success: false,
@@ -88,7 +75,6 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-
     const text =
       typeof body.text === "string"
         ? body.text.trim()
@@ -104,47 +90,41 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data: reminder, error } = await supabase
       .from("reminders")
       .insert({
         user_id: user.id,
         text,
-        completed: false,
       })
-      .select(
-        "reminder_id, text, completed, created_at"
-      )
+      .select("reminder_id, text, completed, created_at")
       .single();
 
     if (error) {
-      console.error(
-        "Failed to create reminder:",
-        error
-      );
+      console.error("Error creating reminder:", error);
 
       return NextResponse.json(
         {
           success: false,
-          message: error.message,
+          message: "Failed to create reminder.",
         },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      reminder: data,
-    });
-  } catch (error) {
-    console.error(
-      "Error creating reminder:",
-      error
+    return NextResponse.json(
+      {
+        success: true,
+        reminder,
+      },
+      { status: 201 }
     );
+  } catch (error) {
+    console.error("Unexpected error creating reminder:", error);
 
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to create reminder.",
+        message: "Internal server error.",
       },
       { status: 500 }
     );

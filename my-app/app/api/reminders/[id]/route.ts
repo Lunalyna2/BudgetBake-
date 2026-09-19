@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 type RouteContext = {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    id: string;
+  }>;
 };
 
 export async function PUT(
@@ -14,14 +16,14 @@ export async function PUT(
 
     const {
       data: { user },
-      error: userError,
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (userError || !user) {
+    if (authError || !user) {
       return NextResponse.json(
         {
           success: false,
-          message: "Unauthorized",
+          message: "Unauthorized.",
         },
         { status: 401 }
       );
@@ -29,35 +31,34 @@ export async function PUT(
 
     const { id } = await context.params;
     const body = await request.json();
-    const { text, completed } = body;
-    const updateData: {
-      text?: string;
-      completed?: boolean;
-    } = {};
 
-    if (typeof text === "string") {
-      updateData.text = text.trim();
+    if (typeof body.completed !== "boolean") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Completed must be a boolean.",
+        },
+        { status: 400 }
+      );
     }
 
-    if (typeof completed === "boolean") {
-      updateData.completed = completed;
-    }
-
-    const { data, error } = await supabase
+    const { data: reminder, error } = await supabase
       .from("reminders")
-      .update(updateData)
+      .update({
+        completed: body.completed,
+      })
       .eq("reminder_id", id)
       .eq("user_id", user.id)
-      .select()
+      .select("reminder_id, text, completed, created_at")
       .single();
 
     if (error) {
-      console.error("Failed to update reminder:", error);
+      console.error("Error updating reminder:", error);
 
       return NextResponse.json(
         {
           success: false,
-          message: error.message,
+          message: "Failed to update reminder.",
         },
         { status: 500 }
       );
@@ -65,15 +66,15 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      reminder: data,
+      reminder,
     });
   } catch (error) {
-    console.error("Update reminder error:", error);
+    console.error("Unexpected error updating reminder:", error);
 
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to update reminder.",
+        message: "Internal server error.",
       },
       { status: 500 }
     );
@@ -89,14 +90,14 @@ export async function DELETE(
 
     const {
       data: { user },
-      error: userError,
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (userError || !user) {
+    if (authError || !user) {
       return NextResponse.json(
         {
           success: false,
-          message: "Unauthorized",
+          message: "Unauthorized.",
         },
         { status: 401 }
       );
@@ -104,29 +105,21 @@ export async function DELETE(
 
     const { id } = await context.params;
 
-    if (!id) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Reminder ID is required.",
-        },
-        { status: 400 }
-      );
-    }
-
-    const { error } = await supabase
+    const { data: reminder, error } = await supabase
       .from("reminders")
       .delete()
       .eq("reminder_id", id)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .select("reminder_id")
+      .single();
 
     if (error) {
-      console.error("Failed to delete reminder:", error);
+      console.error("Error deleting reminder:", error);
 
       return NextResponse.json(
         {
           success: false,
-          message: error.message,
+          message: "Failed to delete reminder.",
         },
         { status: 500 }
       );
@@ -134,15 +127,15 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: "Reminder deleted successfully.",
+      reminder,
     });
   } catch (error) {
-    console.error("Delete reminder error:", error);
+    console.error("Unexpected error deleting reminder:", error);
 
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to delete reminder.",
+        message: "Internal server error.",
       },
       { status: 500 }
     );
