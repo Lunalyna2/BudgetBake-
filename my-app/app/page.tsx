@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
+"use client";
 
-export default function Home() {
-  redirect("/signup");
+import SignUpPage from "./signup/page";
+
+export default function RootPage() {
+  return <SignUpPage />;
 }
