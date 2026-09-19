@@ -10,6 +10,8 @@ type RecipeCarouselProps = {
   onEditRecipe: (recipe: Recipe) => void;
   onScroll: (direction: "left" | "right") => void;
   carouselRef: React.RefObject<HTMLDivElement | null>;
+  isDeleteMode?: boolean;
+  onDeleteRecipe?: (recipe: Recipe) => void;
 };
 
 export default function RecipeCarousel({
@@ -19,6 +21,8 @@ export default function RecipeCarousel({
   onEditRecipe,
   onScroll,
   carouselRef,
+  isDeleteMode,
+  onDeleteRecipe,
 }: RecipeCarouselProps) {
   return (
     <div className="relative mt-8">
@@ -47,7 +51,13 @@ export default function RecipeCarousel({
         className="flex gap-5 overflow-x-auto py-2 scroll-smooth scrollbar-hide"
       >
         {recipes.map((recipe) => (
-          <RecipeCard key={recipe.id} recipe={recipe} onEdit={onEditRecipe} />
+          <RecipeCard
+            key={recipe.id}
+            recipe={recipe}
+            onEdit={onEditRecipe}
+            isDeleteMode={isDeleteMode}
+            onDelete={onDeleteRecipe}
+          />
         ))}
       </div>
     </div>

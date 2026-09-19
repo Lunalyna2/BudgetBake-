@@ -18,3 +18,12 @@ export type RecipeFormState = {
   notes: string;
   imageUrl: string;
 };
+
+export type RecipeIngredient = {
+  id: string;
+  ingredient_id?: string;
+  name: string;
+  quantity: string;
+  unit: string;
+  unitCost: number;
+};
