@@ -44,16 +44,6 @@ const Navbar: React.FC<NavbarProps> = ({ isOpen, onClose }) => {
       {/*header*/}
       <div className="bg-[#F7A9CF] px-6 pb-6 pt-5">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-[24px] font-extrabold leading-none text-[#D83E72]">
-              BudgetBake
-            </h1>
-
-            <p className="mt-1 text-[11px] font-medium text-[#7A4428]">
-              freshly baked pastries
-            </p>
-          </div>
-
           {/*close*/}
           <button
             type="button"

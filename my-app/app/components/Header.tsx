@@ -11,19 +11,6 @@ export default function Header() {
         <Menu className="h-7 w-7" />
       </button>
 
-      <div className="ml-6 flex items-center gap-3">
-        <span className="text-2xl font-black tracking-tight text-[#E94E77]">
-          BudgetBake
-        </span>
-        <div className="h-6 w-[1.5px] bg-[#E94E77]/40" />
-        <span className="text-[10px] font-medium leading-tight text-[#E94E77] uppercase tracking-wider">
-          freshly
-          <br />
-          baked
-          <br />
-          pastries
-        </span>
-      </div>
     </header>
   );
 }

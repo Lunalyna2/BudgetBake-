@@ -20,19 +20,6 @@ export default function TopNavbar({
         <span className="block h-0.5 w-5 bg-[#E64B7A]" />
       </button>
 
-      <h1 className="text-[25px] font-extrabold text-[#D83E72]">
-        BudgetBake
-      </h1>
-
-      <div className="mx-2 h-9.75 w-px bg-white" />
-
-      <p className="text-[10px] text-white">
-        freshly
-        <br />
-        baked
-        <br />
-        pastries
-      </p>
     </header>
   );
 }

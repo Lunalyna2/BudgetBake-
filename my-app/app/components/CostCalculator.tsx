@@ -704,9 +704,6 @@ export default function CostCalculator() {
       <div className="mx-auto flex max-w-340 flex-col gap-6">
         <div className="flex-1 rounded-[22px] border border-[#f2d4df] bg-[#fffdfd] p-5 shadow-[0_5px_18px_rgba(240,154,188,0.08)]">
           <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f9dfe9] text-2xl">
-              🍪
-            </div>
             <div>
               <h1 className="text-[2.15rem] font-black uppercase tracking-[0.08em] text-[#e96ca8]">
                 Cost Calculator
@@ -722,7 +719,6 @@ export default function CostCalculator() {
 
           <div className="mb-5 rounded-[18px] border border-[#f1d3de] bg-[#fff6fa] p-4">
             <div className="mb-4 flex items-center gap-3 text-[#e96ca8]">
-              <span className="text-lg">📋</span>
               <h2 className="text-[1.05rem] font-black uppercase tracking-[0.08em]">
                 Recipe Details
               </h2>
@@ -749,13 +745,13 @@ export default function CostCalculator() {
                       false,
                     );
                   }}
-                  className="mt-2 w-full rounded-xl border border-[#f0d3df] bg-white px-3 py-2.5 text-base font-medium text-[#4f3d44] outline-none focus:border-[#e96ca8]"
+                  className="mt-2 h-12 w-full rounded-xl border border-[#f0d3df] bg-white px-3 text-base font-medium text-[#4f3d44] outline-none focus:border-[#e96ca8]"
                 />
               </label>
 
               <label className="block w-full min-w-0 text-[0.82rem] font-semibold uppercase tracking-[0.06em] text-[#b4778e]">
                 Batch Size
-                <div className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-[#f0d3df] bg-white px-3 py-2.5">
+                <div className="mt-2 flex h-12 w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-[#f0d3df] bg-white px-3">
                   <input
                     type="text"
                     inputMode="numeric"
@@ -791,7 +787,7 @@ export default function CostCalculator() {
                   <button
                     type="button"
                     onClick={handleScaleBatch}
-                    className="rounded-lg bg-linear-to-r from-[#ea7bb3] to-[#e65aa0] px-3 py-2 text-sm font-bold text-white shadow-sm"
+                    className="h-10 whitespace-nowrap rounded-lg bg-linear-to-r from-[#ea7bb3] to-[#e65aa0] px-3 text-sm font-bold text-white shadow-sm"
                   >
                     Scale Batch
                   </button>
@@ -802,7 +798,6 @@ export default function CostCalculator() {
 
           <div className="rounded-[18px] border border-[#f1d3de] bg-[#fff6fa] p-4">
             <div className="mb-4 flex items-center gap-3 text-[#e96ca8]">
-              <span className="text-lg">🥣</span>
               <h2 className="text-[1.05rem] font-black uppercase tracking-[0.08em]">
                 Ingredient Breakdown
               </h2>
@@ -837,7 +832,6 @@ export default function CostCalculator() {
                   className="grid grid-cols-[1.3fr_0.9fr_0.7fr_1fr_0.7fr] items-center gap-2 border-t border-[#f6dfe8] px-4 py-3"
                 >
                   <div className="flex items-center gap-2 text-[#4a3b41]">
-                    <span className="text-lg">{ingredient.name.includes("Flour") ? "🌾" : ingredient.name.includes("Sugar") ? "🥄" : ingredient.name.includes("Butter") ? "🧈" : ingredient.name.includes("Chocolate") ? "🍫" : "✨"}</span>
                     <input
                       value={ingredient.name}
                       onChange={(e) => handleIngredientChange(ingredient.id, "name", e.target.value)}
@@ -963,7 +957,6 @@ export default function CostCalculator() {
             <div className="flex items-start justify-between gap-4 border-b border-[#f2d8e3] pb-4">
               <div>
                 <div className="flex items-center gap-3 text-[#e96ca8]">
-                  <span className="text-2xl">🧾</span>
                   <h2 className="text-[1.4rem] font-black uppercase tracking-[0.08em]">Recipe Summary</h2>
                 </div>
 
