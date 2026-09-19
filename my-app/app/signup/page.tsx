@@ -49,7 +49,7 @@ export default function SignUpPage() {
     const { error: profileError } = await supabase
       .from("users")
       .insert({
-        user_id: data.user.id,
+        user_id: data.user!.id, // non-null assertion added
         name: formData.name.trim(),
         email: formData.email.trim(),
       });
@@ -61,7 +61,7 @@ export default function SignUpPage() {
     }
 
     const defaultRecipes = initialRecipes.map((recipe) => ({
-      user_id: data.user.id,
+      user_id: data.user!.id, // non-null assertion added
       name: recipe.title,
       description: recipe.notes,
       base_servings: 1,
@@ -153,7 +153,7 @@ export default function SignUpPage() {
 
         <button
           type="submit"
-          className="w-full rounded-md bg-gradient-to-r from-pink-500 to-purple-500 py-2 font-semibold text-white transition hover:opacity-90"
+          className="w-full rounded-md bg-linear-to-r from-pink-500 to-purple-500 py-2 font-semibold text-white transition hover:opacity-90"
         >
           Create Account
         </button>
