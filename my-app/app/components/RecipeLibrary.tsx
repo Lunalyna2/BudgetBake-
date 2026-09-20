@@ -920,12 +920,17 @@ export default function RecipeLibrary() {
     <div className="bg-white text-zinc-800 antialiased">
       <main className="mx-auto max-w-7xl px-10 py-6">
         <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="h-5 w-1.5 rounded-full bg-[#800040]" />
-
-            <h1 className="text-lg font-bold uppercase tracking-wider text-[#800040]">
-              RECIPE LIBRARY
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#5A0D36] sm:text-4xl">
+              Recipe Library
             </h1>
+            <p className="mt-1 text-xs font-bold uppercase tracking-[0.24em] text-[#D291BC]">
+              Recipe Collection
+            </p>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-500">
+              Browse, create, and manage your recipes. Track ingredients,
+              costs, and nutritional information all in one place.
+            </p>
           </div>
 
           <button

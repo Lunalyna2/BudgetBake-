@@ -705,14 +705,14 @@ export default function CostCalculator() {
         <div className="flex-1 rounded-[22px] border border-[#f2d4df] bg-[#fffdfd] p-5 shadow-[0_5px_18px_rgba(240,154,188,0.08)]">
           <div className="mb-5 flex items-center gap-3">
             <div>
-              <h1 className="text-[2.15rem] font-black uppercase tracking-[0.08em] text-[#e96ca8]">
+              <h1 className="text-3xl font-extrabold tracking-tight text-[#5A0D36] sm:text-4xl">
                 Cost Calculator
               </h1>
-
-              <p className="text-[0.95rem] text-[#9a7182]">
-                Calculate the total cost,
-                pricing, and profit for your
-                recipe.
+              <p className="mt-1 text-xs font-bold uppercase tracking-[0.24em] text-[#D291BC]">
+                Pricing Tool
+              </p>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-500">
+                Calculate the total cost, pricing, and profit for your recipes.
               </p>
             </div>
           </div>

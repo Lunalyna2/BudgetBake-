@@ -666,12 +666,12 @@ export default function OrderListPage() {
         {/*page header*/}
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D291BC]">
-              Weekly Orders
-            </p>
-            <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-[#5A0D36] sm:text-4xl">
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#5A0D36] sm:text-4xl">
               Order List
             </h1>
+            <p className="mt-1 text-xs font-bold uppercase tracking-[0.24em] text-[#D291BC]">
+              Weekly Orders
+            </p>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-500">
               Keep track of every bake list and its customers. Search, prioritize,
               and manage orders all in one place.
