@@ -17,9 +17,10 @@ export default function NavigationLayout({
 
   const navbarRef = useRef<HTMLDivElement>(null);
 
-  //hide navbar on login and sign-in pages
-  const isAuthPage =
-    pathname === "/login" || pathname === "/sign-in";
+  // hide navbar on login, sign-in, and sign-up pages
+  const authPages = ["/login", "/signup"];
+
+  const isAuthPage = authPages.includes(pathname);
 
   const toggleNavbar = () => {
     setIsNavbarOpen((previous) => !previous);
