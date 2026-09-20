@@ -701,7 +701,7 @@ export default function CostCalculator() {
 
   return (
     <main className="min-h-screen bg-[#fdf6f7] px-5 py-6 text-[#5d4a52]">
-      <div className="mx-auto flex max-w-340 flex-col gap-6">
+      <div className="mx-auto flex flex-col gap-6">
         <div className="flex-1 rounded-[22px] border border-[#f2d4df] bg-[#fffdfd] p-5 shadow-[0_5px_18px_rgba(240,154,188,0.08)]">
           <div className="mb-5 flex items-center gap-3">
             <div>

@@ -662,7 +662,7 @@ export default function OrderListPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB] px-4 py-8 text-[#5A0D36] sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto">
         {/*page header*/}
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>

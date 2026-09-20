@@ -918,7 +918,7 @@ export default function RecipeLibrary() {
 
   return (
     <div className="bg-white text-zinc-800 antialiased">
-      <main className="mx-auto max-w-7xl px-10 py-6">
+      <main className="mx-auto px-4 py-6 sm:px-6 lg:px-10">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-[#5A0D36] sm:text-4xl">
